@@ -23,6 +23,9 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 - [ ] Enable or disable as many (or as few) of the above features.
 - [ ] Dart/Flutter plugin
   - Plugins for other languages should be relatively simple to make, I'm just focusing on Flutter right now.
+- [ ] Properly use `context.Context`
+  - I just haven't had much oportunity to use it as of yet
+  - Currently everything is just using `context.TODO()`
 
 ## Current Features
 
