@@ -5,20 +5,21 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 ## Goals
 
 - [ ] Provide a http.Handler that can be use on any port or address you feel like
-  - [ ] Maybe provide a small default runner that just runs on a predefined port
+  - Maybe provide a small default runner that just runs on a predefined port
 - [ ] User count
 - [ ] User accounts
-  - [ ] I need to do some research on security to make sure I'm not leaking passwords everywhere
+  - I need to do some research on security to make sure I'm not leaking passwords everywhere
 - [ ] User uploaded data
 - [ ] Access application data
 - [ ] Send crash reports
-  - [ ] Potentially log the current "page" or action to be sent with the report
+  - Potentially log the current "page" or action to be sent with the report
 - [ ] A really bad looking default website (I'm don't use HTML, CSS, or JS very often).
-  - [ ] I might just make this a Flutter app that can be deployed as a PWA.
+  - I might just make this a Flutter app that can be deployed as a PWA.
 - [ ] Protect unauthorized usage with a secret key. If the key is not present, turn off the features cleanly.
-  - [ ] Allow open-source to be compiled without borking the entire app.
+  - Allow open-source to be compiled without borking the entire app.
 - [ ] Enable or disable as many (or as few) of the above features.
 - [ ] Dart/Flutter plugin
+  - Plugins for other languages should be relatively simple to make, I'm just focusing on Flutter right now.
 
 ## Current Features
 
