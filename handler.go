@@ -24,7 +24,7 @@ func (h Handler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 func (h Handler) GetCapabilities(resp http.ResponseWriter) {}
 
-func (h Handler) GetUserCount(resp http.ResponseWriter) {
+func (h Handler) SendUserCount(resp http.ResponseWriter) {
 	i, err := h.usersCol.EstimatedDocumentCount(context.TODO())
 	if err != nil {
 		fmt.Println(err)
