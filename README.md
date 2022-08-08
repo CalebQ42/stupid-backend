@@ -9,6 +9,9 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 - [ ] User count
 - [ ] User accounts
   - I need to do some research on security to make sure I'm not leaking passwords everywhere
+  - Two types of Users:
+    - Global users. Can be used across multiple apps
+    - App Users. There to keep track of user count. Links to a global account if wanted
 - [ ] User uploaded data
 - [ ] Access application data
 - [ ] Send crash reports
@@ -25,20 +28,36 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 LOL
 
+## Needed Collections
+
+- Global Users
+- App Users
+- AppData
+- UserData
+- Crashes
+
 ## Data Model
 
 This is all just an idea on how the data will be organized in the DB. Subject to change (just like everything else right now).
 
-User:
+Global User:
 
 ```JSON
 {
   _id: "uuid",
-  lastConnect: 20220807, //Date in YYYYMMDD format. is !hasLogin and hasn't connected for over a month, record is deleted
-  hasLogin: true, //If false, username and password will NOT be present, or will be empty. 
   username: "name",
   password: "hashed password", //I need to do research on security before I really set this part up...
-  email: "email@email.com" //Probably won't be present or used for a while. Only present to be used in the furture for account recovery.
+  email: "email@email.com" //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
+}
+```
+
+App User:
+
+```JSON
+{
+  _id: "uuid",
+  hasGlobal: true,
+  lastConnected: 20220808 //Records should be deleted if not connected after 30 days. User data should only be deleted if the global account is deleted.
 }
 ```
 
@@ -58,7 +77,8 @@ User Data:
 ```JSON
 {
   _id: "uuid",
-  owner: "user id",
+  owner: "user id", //ID of the global user. App users should NOT have info stored.
+  globalRead: false,
   readPerm: [ //Other users with permission to read the data
     "user id"
   ],

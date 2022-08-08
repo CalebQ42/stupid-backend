@@ -2,34 +2,35 @@ package stupid
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"strconv"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Handler struct {
-	mainDB   *mongo.Database
-	usersCol *mongo.Collection
+type Backend struct {
+	GlobalUsers *mongo.Collection
+	AppUsers    *mongo.Collection
+	AppData     *mongo.Collection
+	UserData    *mongo.Collection
+	Crashes     *mongo.Collection
 }
 
-func (h Handler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case "":
-		fallthrough
-	case "GET":
-	}
+// Amount of users for your application within the last month.
+func (b Backend) AppUserCount() (int64, error) {
+	return b.AppUsers.EstimatedDocumentCount(context.TODO())
 }
 
-func (h Handler) GetCapabilities(resp http.ResponseWriter) {}
-
-func (h Handler) SendUserCount(resp http.ResponseWriter) {
-	i, err := h.usersCol.EstimatedDocumentCount(context.TODO())
-	if err != nil {
-		fmt.Println(err)
-		resp.Write([]byte("FAILURE: Can't get user count"))
-		return
+// Logs a connection for the given uuid.
+func (b Backend) LogConnection(uuid string) error {
+	n := time.Now()
+	time := n.Year()*10000 + int(n.Month())*100 + n.Day()
+	res := b.AppUsers.FindOneAndUpdate(context.TODO(), bson.M{"_id": uuid}, bson.M{"lastConnected": time})
+	if res.Err() == mongo.ErrNoDocuments {
+		_, err := b.AppUsers.InsertOne(context.TODO(), bson.M{"_id": uuid, "hasGlobal": false, "lastConnected": time})
+		if err != nil {
+			return err
+		}
 	}
-	resp.Write([]byte(strconv.Itoa(int(i))))
+	return nil
 }
