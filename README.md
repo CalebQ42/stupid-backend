@@ -127,16 +127,7 @@ Return:
 
 ### Check Login
 
->`GET: /?login`
-
-Request body:
-
-```JSON
-{
-  "username": "name",
-  "password": "password"
-}
-```
+>`GET: /?login?username=username?password=password`
 
 Return:
 
@@ -144,5 +135,6 @@ Return:
 {
   "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
   "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
+  "token": "jwt token"
 }
 ```
