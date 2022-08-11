@@ -15,7 +15,7 @@ import (
 
 func main() {
 	flag.Usage = helpMsg
-	mainDB := flag.String("db", "", "The main DB to use. Unless specified, uses the DB named stupid")
+	mainDB := flag.String("db", "stupid", "The main DB to use. Unless specified, uses the DB named stupid")
 	globalUs := flag.String("glob", "globalUsers", "Global users collection. Can specify a DB outside of the main by using /. Ex: stupid/globalUsers")
 	appUs := flag.String("users", "users", "App users collection. Can specify a DB outside of the main by using /. Ex: stupid/users")
 	appData := flag.String("appData", "appData", "App data collection. Can specify a DB outside of the main by using /. Ex: stupid/appData")
