@@ -21,13 +21,18 @@ type Backend struct {
 
 // Implementation of http.Handler
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL.Query().Has("userCount"))
-	if req.Method == "GET" && req.URL.Query().Has("userCount") {
+	if b.AppUsers != nil && req.Method == "GET" && req.URL.Query().Has("userCount") {
 		count, err := b.AppUserCount()
 		if err != nil {
 			fmt.Println(err)
 		} else {
 			writer.Write([]byte(strconv.Itoa(int(count))))
+		}
+	} else if b.AppUsers != nil && req.Method == "POST" && req.URL.Query().Has("logCon") && req.URL.Query().Has("id") {
+		id := req.URL.Query().Get("id")
+		err := b.LogCon(id)
+		if err != nil {
+			fmt.Println(err)
 		}
 	}
 }

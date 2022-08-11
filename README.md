@@ -6,7 +6,7 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 - [ ] Provide a http.Handler that can be use on any port or address you feel like
   - Maybe provide a small default runner that just runs on a predefined port
-- [ ] User count
+- [X] User count
 - [ ] User accounts
   - I need to do some research on security to make sure I'm not leaking passwords everywhere
   - Two types of Users:
@@ -29,7 +29,8 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 ## Current Features
 
-LOL
+- Log users
+- Get user count
 
 ## Needed Collections
 
@@ -38,6 +39,54 @@ LOL
 - AppData
 - UserData
 - Crashes
+
+## Queries
+
+This is just an idea on how the API will be structured. Subject to change (just like everything else).
+
+### Log Connection
+
+> `POST: ?logCon?id=uuid`
+
+### User Count
+
+> `GET: ?userCount`
+
+Return:
+
+```JSON
+{
+  "users": 0 //Always returns 0 if unauthenticated
+}
+```
+
+### Create User
+
+> `POST: ?newUser?id=uuid?username=username?password=password`
+
+Return:
+
+```JSON
+{
+  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
+  "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
+  "token": "jwt token"
+}
+```
+
+### Login
+
+> `GET: ?login?username=username?password=password`
+
+Return:
+
+```JSON
+{
+  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
+  "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
+  "token": "jwt token"
+}
+```
 
 ## Data Model
 
@@ -106,35 +155,5 @@ Crash reports:
       action: "characters" //What page or activity the user was doing
     }
   ]
-}
-```
-
-## Queries
-
-TODO: Add authentication.
-
-### User Count
-
-> `GET: /?userCount`
-
-Return:
-
-```JSON
-{
-  "users": 0 //Always returns 0 if unauthenticated
-}
-```
-
-### Check Login
-
->`GET: /?login?username=username?password=password`
-
-Return:
-
-```JSON
-{
-  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
-  "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
-  "token": "jwt token"
 }
 ```
