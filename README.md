@@ -51,6 +51,8 @@ Global User:
   username: "name",
   password: "hashed password", //I need to do research on security before I really set this part up...
   email: "email@email.com" //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
+  failed: 0, //Failed logins.
+  lastTimeout: 0, //Unix timestamp of the last timeout issued. Timout length is TBD based on failed.
 }
 ```
 
@@ -104,5 +106,43 @@ Crash reports:
       action: "characters" //What page or activity the user was doing
     }
   ]
+}
+```
+
+## Queries
+
+TODO: Add authentication.
+
+### User Count
+
+> `GET: /?userCount`
+
+Return:
+
+```JSON
+{
+  "users": 0 //Always returns 0 if unauthenticated
+}
+```
+
+### Check Login
+
+>`GET: /?login`
+
+Request body:
+
+```JSON
+{
+  "username": "name",
+  "password": "password"
+}
+```
+
+Return:
+
+```JSON
+{
+  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
+  "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
 }
 ```
