@@ -2,6 +2,9 @@ package stupid
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,13 +19,26 @@ type Backend struct {
 	Crashes     *mongo.Collection
 }
 
+// Implementation of http.Handler
+func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	fmt.Println(req.URL)
+	if req.Method == "GET" && req.URL.EscapedPath() == "users" {
+		count, err := b.AppUserCount()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			writer.Write([]byte(strconv.Itoa(int(count))))
+		}
+	}
+}
+
 // Amount of users for your application within the last month.
 func (b Backend) AppUserCount() (int64, error) {
 	return b.AppUsers.EstimatedDocumentCount(context.TODO())
 }
 
 // Logs a connection for the given uuid.
-func (b Backend) LogConnection(uuid string) error {
+func (b Backend) LogCon(uuid string) error {
 	n := time.Now()
 	time := n.Year()*10000 + int(n.Month())*100 + n.Day()
 	res := b.AppUsers.FindOneAndUpdate(context.TODO(), bson.M{"_id": uuid}, bson.M{"lastConnected": time})
