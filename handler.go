@@ -23,6 +23,7 @@ type Backend struct {
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	fmt.Println(req.URL.EscapedPath())
 	fmt.Println(req.URL.EscapedFragment())
+	fmt.Println(req.URL)
 	if req.Method == "GET" && req.URL.EscapedPath() == "/?userCount" {
 		count, err := b.AppUserCount()
 		if err != nil {
