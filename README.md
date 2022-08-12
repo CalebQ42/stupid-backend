@@ -29,11 +29,11 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 ## Current Features
 
-- Log users
-- Get user count
+- Checks api key against database.
 
 ## Needed Collections
 
+- API Keys
 - Global Users
 - App Users
 - AppData
@@ -44,25 +44,36 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 This is just an idea on how the API will be structured. Subject to change (just like everything else).
 
+### Get Features
+
+> `GET: ?features?key=apiKey`
+
+Features:
+
+```text
+c - Get User Count
+l - Log App Connections
+g - Global Users
+u - User Data
+a - App Data
+r - Crash Reporting
+```
+
+Returns the features available to the api key as a string (Ex: A return of clr means the api key supports gettings user counts, loging connections, and crash reporting). The returned string has no guarenteed order.
+
 ### Log Connection
 
-> `POST: ?logCon?id=uuid`
+> `POST: ?logCon?key=apiKey?id=uuid`
 
 ### User Count
 
-> `GET: ?userCount`
+> `GET: ?userCount?key=apiKey`
 
-Return:
-
-```JSON
-{
-  "users": 0 //Always returns 0 if unauthenticated
-}
-```
+Returns the number of users as a string.
 
 ### Create User
 
-> `POST: ?newUser?id=uuid?username=username?password=password`
+> `POST: ?newUser?key=apiKey?id=uuid?username=username?password=password`
 
 Return:
 
@@ -76,7 +87,7 @@ Return:
 
 ### Login
 
-> `GET: ?login?username=username?password=password`
+> `GET: ?login?key=apiKey?username=username?password=password`
 
 Return:
 
@@ -92,16 +103,26 @@ Return:
 
 This is all just an idea on how the data will be organized in the DB. Subject to change (just like everything else right now).
 
+API Keys:
+
+```JSON
+{
+  "_id": "api key",
+  "features": "clguar", //Look at the api for getting features to see what these mean.
+  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration.
+}
+```
+
 Global User:
 
 ```JSON
 {
-  _id: "uuid",
-  username: "name",
-  password: "hashed password", //I need to do research on security before I really set this part up...
-  email: "email@email.com" //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
-  failed: 0, //Failed logins.
-  lastTimeout: 0, //Unix timestamp of the last timeout issued. Timout length is TBD based on failed.
+  "_id": "uuid",
+  "username": "name",
+  "password": "hashed password", //I need to do research on security before I really set this part up...
+  "email": "email@email.com", //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
+  "failed": 0, //Failed logins.
+  "lastTimeout": 0, //Unix timestamp of the last timeout issued. Timout length is TBD based on failed.
 }
 ```
 
@@ -109,9 +130,9 @@ App User:
 
 ```JSON
 {
-  _id: "uuid",
-  hasGlobal: true,
-  lastConnected: 20220808 //Records should be deleted if not connected after 30 days. User data should only be deleted if the global account is deleted.
+  "_id": "uuid",
+  "hasGlobal": true,
+  "lastConnected": 20220808 //Records should be deleted if not connected after 30 days. User data should only be deleted if the global account is deleted.
 }
 ```
 
@@ -119,10 +140,10 @@ Application Data:
 
 ```JSON
 {
-  _id: "uuid",
-  displayName: "name to be displayed to user",
-  type: "type", //TBD by application. Suggestions include data, config.
-  data: {} //Determined by the application and type.
+  "_id": "uuid",
+  "displayName": "name to be displayed to user",
+  "type": "type", //TBD by application. Suggestions include data, config.
+  "data": {} //Determined by the application and type.
 }
 ```
 
@@ -130,16 +151,16 @@ User Data:
 
 ```JSON
 {
-  _id: "uuid",
-  owner: "user id", //ID of the global user. App users should NOT have info stored.
-  globalRead: false,
-  readPerm: [ //Other users with permission to read the data
+  "_id": "uuid",
+  "owner": "user id", //ID of the global user. App users should NOT have info stored.
+  "globalRead": false,
+  "readPerm": [ //Other users with permission to read the data
     "user id"
   ],
-  writePerm: [ //Other users with permission to write the data
+  "writePerm": [ //Other users with permission to write the data
     "user id"
   ],
-  data: {} //Determined by the application.
+  "data": {} //Determined by the application.
 }
 ```
 
@@ -147,12 +168,12 @@ Crash reports:
 
 ```JSON
 {
-  _id: "first line of error", //This is to attempt to group together multiple instances of the same error. Possible could become the _id. Possibly might need to be something different.
-  reports: [
+  "_id": "first line of error", //This is to attempt to group together multiple instances of the same error. Possible could become the _id. Possibly might need to be something different.
+  "reports": [
     {
-      _id: "uuid", //This is generated at time of crash. Prevents double sending of crash reports (such as if the report needs to be sent on next app launch)
-      stack: "stacktrace",
-      action: "characters" //What page or activity the user was doing
+      "_id": "uuid", //This is generated at time of crash. Prevents double sending of crash reports (such as if the report needs to be sent on next app launch)
+      "stack": "stacktrace",
+      "action": "characters" //What page or activity the user was doing
     }
   ]
 }

@@ -21,6 +21,7 @@ func main() {
 	appData := flag.String("appData", "appData", "App data collection. Can specify a DB outside of the main by using /. Ex: stupid/appData")
 	userData := flag.String("data", "userData", "User data collection. Can specify a DB outside of the main by using /. Ex: stupid/userData")
 	crash := flag.String("crash", "crash", "Crashes collection. Can specify a DB outside of the main by using /. Ex: stupid/crash")
+	api := flag.String("api", "api", "API key collection. Can specify a DB outside of the main by using /. Ex: stupid/api")
 	flag.Parse()
 	if flag.Arg(0) == "" {
 		fmt.Println("Must provide MongoDB address")
@@ -31,7 +32,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	var globCol, appUserCol, appDatCol, userDatCol, crashCol *mongo.Collection
+	var globCol, appUserCol, appDatCol, userDatCol, crashCol, apiCol *mongo.Collection
 	if !strings.Contains(*globalUs, "/") {
 		globCol = mong.Database(*mainDB).Collection(*globalUs)
 	} else {
@@ -62,17 +63,24 @@ func main() {
 		sep := strings.Index(*crash, "/")
 		crashCol = mong.Database((*crash)[:sep]).Collection((*crash)[sep+1:])
 	}
+	if !strings.Contains(*api, "/") {
+		apiCol = mong.Database(*mainDB).Collection(*api)
+	} else {
+		sep := strings.Index(*api, "/")
+		apiCol = mong.Database((*api)[:sep]).Collection((*api)[sep+1:])
+	}
 	http.ListenAndServe(":1109", stupid.Backend{
 		GlobalUsers: globCol,
 		AppUsers:    appUserCol,
 		AppData:     appDatCol,
 		UserData:    userDatCol,
 		Crashes:     crashCol,
+		ApiKeys:     apiCol,
 	})
 }
 
 func helpMsg() {
-	fmt.Println("Usage: stupid [mongo address] -db [value] -glob [value] -users [value] -appData [value] -data [value] -crash [value]")
+	fmt.Println("Usage: stupid [mongo address] -db [value] -glob [value] -users [value] -appData [value] -data [value] -crash [value] -api [value]")
 	fmt.Println("")
-	fmt.Println("I'm too lazy ATM to make a proper help message. I'll do it later.")
+	fmt.Println("I'm too lazy ATM (plus things are probably going to change) to make a proper help message. I'll do it later.")
 }

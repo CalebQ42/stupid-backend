@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,28 +11,44 @@ import (
 )
 
 type Backend struct {
+	ApiKeys     *mongo.Collection
 	GlobalUsers *mongo.Collection
 	AppUsers    *mongo.Collection
 	AppData     *mongo.Collection
 	UserData    *mongo.Collection
 	Crashes     *mongo.Collection
+	CountUsers  bool
 }
 
 // Implementation of http.Handler
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	if b.AppUsers != nil && req.Method == "GET" && req.URL.Query().Has("userCount") {
-		count, err := b.AppUserCount()
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			writer.Write([]byte(strconv.Itoa(int(count))))
+	q := req.URL.Query()
+	var features string
+	if !q.Has("key") {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	} else {
+		//TODO: Cache API Keys to make this a bit quicker.
+		apiRes := b.ApiKeys.FindOne(context.TODO(), bson.M{"id": q.Get("key")})
+		if apiRes.Err() != nil {
+			writer.WriteHeader(http.StatusUnauthorized)
+			if apiRes.Err() != mongo.ErrNoDocuments {
+				fmt.Println(apiRes.Err())
+			}
+			return
 		}
-	} else if b.AppUsers != nil && req.Method == "POST" && req.URL.Query().Has("logCon") && req.URL.Query().Has("id") {
-		id := req.URL.Query().Get("id")
-		err := b.LogCon(id)
+		var api ApiKey
+		err := apiRes.Decode(&api)
 		if err != nil {
+			writer.WriteHeader(http.StatusUnauthorized)
 			fmt.Println(err)
+			return
 		}
+		if time.Unix(api.Death, 0).Before(time.Now()) {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		features = api.Features
 	}
 }
 
