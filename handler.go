@@ -52,7 +52,9 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if q.Has("features") {
-		err = json.NewEncoder(writer).Encode(api)
+		enc := json.NewEncoder(writer)
+		enc.SetIndent("", "	")
+		err = enc.Encode(api)
 		if err != nil {
 			fmt.Println(err)
 			writer.WriteHeader(http.StatusFailedDependency)
@@ -88,7 +90,9 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			writer.WriteHeader(http.StatusFailedDependency)
 			return
 		}
-		err = json.NewEncoder(writer).Encode(map[string]int64{"count": count})
+		enc := json.NewEncoder(writer)
+		enc.SetIndent("", "	")
+		err = enc.Encode(map[string]int64{"count": count})
 		if err != nil {
 			fmt.Println(err)
 			writer.WriteHeader(http.StatusFailedDependency)
