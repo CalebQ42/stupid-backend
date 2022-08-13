@@ -45,7 +45,9 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 
 ## Queries
 
-This is just an idea on how the API will be structured. Subject to change (just like everything else).
+This is just an idea on how the API will be structured. Subject to change (just like everything else). Query keys do not need to be in any particular order.
+
+>! TODO: Move alot to request body instead of query.
 
 ### Get Features
 
