@@ -2,8 +2,10 @@ package stupid
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,8 +24,9 @@ type Backend struct {
 
 // Implementation of http.Handler
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	var err error
 	q := req.URL.Query()
-	var features string
+	var api ApiKey
 	if !q.Has("key") {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
@@ -37,19 +40,63 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			}
 			return
 		}
-		var api ApiKey
-		err := apiRes.Decode(&api)
+		err = apiRes.Decode(api)
 		if err != nil {
 			writer.WriteHeader(http.StatusUnauthorized)
 			fmt.Println(err)
 			return
 		}
-		if time.Unix(api.Death, 0).Before(time.Now()) {
+		if api.Death != -1 && time.Unix(api.Death, 0).Before(time.Now()) {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		features = api.Features
 	}
+	if q.Has("features") {
+		err = json.NewEncoder(writer).Encode(api)
+		if err != nil {
+			fmt.Println(err)
+			writer.WriteHeader(http.StatusFailedDependency)
+		}
+		return
+	}
+	if q.Has("logCon") {
+		if !strings.Contains(api.Features, "l") {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		id := q.Get("id")
+		if id != "" {
+			err = b.LogCon(id)
+			if err != nil {
+				fmt.Println(err)
+				writer.WriteHeader(http.StatusFailedDependency)
+			}
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+		return
+	}
+	if q.Has("userCount") {
+		if !strings.Contains(api.Features, "c") {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		var count int64
+		count, err = b.AppUserCount()
+		if err != nil {
+			fmt.Println(err)
+			writer.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+		err = json.NewEncoder(writer).Encode(map[string]int64{"count": count})
+		if err != nil {
+			fmt.Println(err)
+			writer.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+		return
+	}
+	writer.WriteHeader(http.StatusBadRequest)
 }
 
 // Amount of users for your application within the last month.

@@ -1,49 +1,49 @@
 package stupid
 
 type ApiKey struct {
-	ID       string
-	Features string
-	Death    int64
+	ID       string `json:"_id"`
+	Features string `json:"features"`
+	Death    int64  `json:"death"`
 }
 
 type GlobalUser struct {
-	ID          string
-	Username    string
-	Password    string
-	Email       string
-	Failed      int
-	LastTimeout int64
+	ID          string `json:"_id"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Email       string `json:"email"`
+	Failed      int    `json:"failed"`
+	LastTimeout int64  `json:"lastTimout"`
 }
 
 type AppUser struct {
-	ID            string
-	Global        bool
-	LastConnected int
+	ID            string `json:"_id"`
+	Global        bool   `json:"hasGlobal"`
+	LastConnected int    `json:"lastConnected"`
 }
 
 type AppData struct {
-	ID   string
-	Name string
-	Type string
-	Data any
+	Data any    `json:"data"`
+	ID   string `json:"_id"`
+	Name string `json:"displayName"`
+	Type string `json:"type"`
 }
 
 type UserData struct {
-	ID         string
-	Owner      string
-	GlobalRead bool
-	Read       []string
-	Write      []string
 	Data       any
+	ID         string   `json:"_id"`
+	Owner      string   `json:"owner"`
+	Read       []string `json:"readPerm"`
+	Write      []string `json:"writePerm"`
+	GlobalRead bool     `json:"globalRead"`
 }
 
 type Report struct {
-	ID     string
-	Stack  string
-	Action string
+	ID     string `json:"_id"`
+	Stack  string `json:"stack"`
+	Action string `json:"action"`
 }
 
 type Crash struct {
-	ID      string
-	Reports []Report
+	ID      string   `json:"_id"`
+	Reports []Report `json:"reports"`
 }

@@ -30,6 +30,9 @@ A stupid backend to test things out. I don't actually know what I'm doing, but w
 ## Current Features
 
 - Checks api key against database.
+- Get features of an api key.
+- Log Connection
+- Get user count
 
 ## Needed Collections
 
@@ -59,7 +62,15 @@ a - App Data
 r - Crash Reporting
 ```
 
-Returns the features available to the api key as a string (Ex: A return of clr means the api key supports gettings user counts, loging connections, and crash reporting). The returned string has no guarenteed order.
+Returns:
+
+```JSON
+{
+  "_id": "api key",
+  "features": "clguar", //If the letter above is present, the key can acces that feature.
+  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration.
+}
+```
 
 ### Log Connection
 
@@ -69,11 +80,17 @@ Returns the features available to the api key as a string (Ex: A return of clr m
 
 > `GET: ?userCount?key=apiKey`
 
-Returns the number of users as a string.
+Returns:
 
-### Create User
+```JSON
+{
+  "count": 0,
+}
+```
 
-> `POST: ?newUser?key=apiKey?id=uuid?username=username?password=password`
+### Authentication
+
+> `GET: ?login?key=apiKey?username=username?password=password`
 
 Return:
 
@@ -85,9 +102,9 @@ Return:
 }
 ```
 
-### Login
+### Create User
 
-> `GET: ?login?key=apiKey?username=username?password=password`
+> `POST: ?createUser?key=apiKey?id=uuid?username=username?password=password`
 
 Return:
 
@@ -153,7 +170,7 @@ User Data:
 {
   "_id": "uuid",
   "owner": "user id", //ID of the global user. App users should NOT have info stored.
-  "globalRead": false,
+  "globalRead": false, //Can anyone see this?
   "readPerm": [ //Other users with permission to read the data
     "user id"
   ],
