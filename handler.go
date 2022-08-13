@@ -32,7 +32,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	} else {
 		//TODO: Cache API Keys to make this a bit quicker.
-		apiRes := b.ApiKeys.FindOne(context.TODO(), bson.M{"id": q.Get("key")})
+		apiRes := b.ApiKeys.FindOne(context.TODO(), bson.M{"_id": q.Get("key")})
 		if apiRes.Err() != nil {
 			writer.WriteHeader(http.StatusUnauthorized)
 			if apiRes.Err() != mongo.ErrNoDocuments {
