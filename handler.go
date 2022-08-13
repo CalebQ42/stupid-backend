@@ -40,7 +40,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			}
 			return
 		}
-		err = apiRes.Decode(api)
+		err = apiRes.Decode(&api)
 		if err != nil {
 			writer.WriteHeader(http.StatusUnauthorized)
 			fmt.Println(err)
