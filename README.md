@@ -49,7 +49,7 @@ This is just an idea on how the API will be structured. Subject to change (just 
 
 ### Get Features
 
-> `GET: ?features?key=apiKey`
+> `GET: /?features&key=apiKey`
 
 Features:
 
@@ -74,11 +74,11 @@ Returns:
 
 ### Log Connection
 
-> `POST: ?logCon?key=apiKey?id=uuid`
+> `POST: /?logCon&key=apiKey&id=uuid`
 
 ### User Count
 
-> `GET: ?userCount?key=apiKey`
+> `GET: /?userCount&key=apiKey`
 
 Returns:
 
@@ -90,7 +90,7 @@ Returns:
 
 ### Authentication
 
-> `GET: ?login?key=apiKey?username=username?password=password`
+> `GET: /?login&key=apiKey&username=username&password=password`
 
 Return:
 
@@ -104,7 +104,7 @@ Return:
 
 ### Create User
 
-> `POST: ?createUser?key=apiKey?id=uuid?username=username?password=password`
+> `POST: /?createUser&key=apiKey&id=uuid&username=username&password=password`
 
 Return:
 
