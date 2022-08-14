@@ -13,6 +13,12 @@ type GlobalUser struct {
 	LastTimeout int64  `json:"lastTimout"`
 }
 
+type AuthReturn struct {
+	ID     string `json:"_id"`
+	Timout int    `json:"timeout"`
+	Token  string `json:"token"`
+}
+
 type AppUser struct {
 	Global        bool `json:"hasGlobal"`
 	LastConnected int  `json:"lastConnected"`

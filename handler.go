@@ -51,13 +51,22 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	var body map[string]interface{}
+	if req.ContentLength > 0 {
+		err = json.NewDecoder(req.Body).Decode(&body)
+		if err != nil {
+			fmt.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 	if q.Has("features") {
 		enc := json.NewEncoder(writer)
 		enc.SetIndent("", "	")
 		err = enc.Encode(api)
 		if err != nil {
 			fmt.Println(err)
-			writer.WriteHeader(http.StatusFailedDependency)
+			writer.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
@@ -71,7 +80,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			err = b.LogCon(id)
 			if err != nil {
 				fmt.Println(err)
-				writer.WriteHeader(http.StatusFailedDependency)
+				writer.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
 			writer.WriteHeader(http.StatusBadRequest)
@@ -87,7 +96,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		count, err = b.AppUserCount()
 		if err != nil {
 			fmt.Println(err)
-			writer.WriteHeader(http.StatusFailedDependency)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		enc := json.NewEncoder(writer)
@@ -95,10 +104,28 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		err = enc.Encode(map[string]int64{"count": count})
 		if err != nil {
 			fmt.Println(err)
-			writer.WriteHeader(http.StatusFailedDependency)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		return
+	}
+	if q.Has("auth") {
+		if !strings.Contains(api.Features, "g") {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		u, uPres := body["username"].(string)
+		p, pPres := body["password"].(string)
+		if !uPres || !pPres {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res := b.GlobalUsers.FindOne(context.TODO(), bson.M{"username": u})
+		if res.Err() != nil {
+			if res.Err() == mongo.ErrNoDocuments {
+
+			}
+		}
 	}
 	writer.WriteHeader(http.StatusBadRequest)
 }

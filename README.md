@@ -70,7 +70,7 @@ Returns:
 {
   "_id": "api key",
   "features": "clguar", //If the letter above is present, the key can acces that feature.
-  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration.
+  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration. Subject to change.
 }
 ```
 
@@ -92,7 +92,16 @@ Returns:
 
 ### Authentication
 
-> `GET: /?login&key=apiKey&username=username&password=password`
+> `GET: /?auth&key=apiKey`
+
+Request Body:
+
+```JSON
+{
+  "username": "username",
+  "password": "password"
+}
+```
 
 Return:
 
@@ -106,7 +115,17 @@ Return:
 
 ### Create User
 
-> `POST: /?createUser&key=apiKey&id=uuid&username=username&password=password`
+> `POST: /?createUser&key=apiKey`
+
+Request Body:
+
+```JSON
+{
+  "_id": "uuid",
+  "username": "username",
+  "password": "password"
+}
+```
 
 Return:
 
