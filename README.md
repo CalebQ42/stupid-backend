@@ -107,7 +107,7 @@ Return:
 
 ```JSON
 {
-  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
+  "uuid": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
   "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
   "token": "jwt token"
 }
@@ -121,7 +121,7 @@ Request Body:
 
 ```JSON
 {
-  "_id": "uuid",
+  "uuid": "uuid",
   "username": "username",
   "password": "password"
 }
@@ -131,7 +131,7 @@ Return:
 
 ```JSON
 {
-  "_id": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
+  "uuid": "uuid", //If invalid login, unauthenticated, or timed-out an empty string is returned.
   "timeout": 0, //If timed-out, returns seconds remaining in timeout. Otherwise returns 0.
   "token": "jwt token"
 }
@@ -145,9 +145,9 @@ API Keys:
 
 ```JSON
 {
-  "_id": "api key",
+  "key": "api key",
   "features": "clguar", //Look at the api for getting features to see what these mean.
-  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration.
+  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration (a key can be revoked at any point in time).
 }
 ```
 
@@ -155,12 +155,13 @@ Global User:
 
 ```JSON
 {
-  "_id": "uuid",
+  "uuid": "uuid",
   "username": "name",
   "password": "hashed password", //I need to do research on security before I really set this part up...
+  "salt": "salt",
   "email": "email@email.com", //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
-  "failed": 0, //Failed logins.
-  "lastTimeout": 0, //Unix timestamp of the last timeout issued. Timout length is TBD based on failed.
+  "failed": 0, //Failed logins. Timout occurs every 3 failed logins.
+  "lastTimeout": 0, //Unix timestamp of the last timeout issued. Timout is 3^((failed/3)-1) minutes, maxing out at 18 failed attempts for a little over 4 hours of timeout.
 }
 ```
 
@@ -168,7 +169,7 @@ App User:
 
 ```JSON
 {
-  "_id": "uuid",
+  "uuid": "uuid",
   "hasGlobal": true,
   "lastConnected": 20220808 //Records should be deleted if not connected after 30 days. User data should only be deleted if the global account is deleted.
 }
@@ -178,7 +179,7 @@ Application Data:
 
 ```JSON
 {
-  "_id": "uuid",
+  "uuid": "uuid",
   "displayName": "name to be displayed to user",
   "type": "type", //TBD by application. Suggestions include data, config.
   "data": {} //Determined by the application and type.
@@ -189,7 +190,7 @@ User Data:
 
 ```JSON
 {
-  "_id": "uuid",
+  "uuid": "uuid",
   "owner": "user id", //ID of the global user. App users should NOT have info stored.
   "globalRead": false, //Can anyone see this?
   "readPerm": [ //Other users with permission to read the data
@@ -206,7 +207,7 @@ Crash reports:
 
 ```JSON
 {
-  "_id": "first line of error", //This is to attempt to group together multiple instances of the same error. Possible could become the _id. Possibly might need to be something different.
+  "error": "first line of error", //This is to attempt to group together multiple instances of the same error. Possible could become the _id. Possibly might need to be something different.
   "reports": [
     {
       "_id": "uuid", //This is generated at time of crash. Prevents double sending of crash reports (such as if the report needs to be sent on next app launch)

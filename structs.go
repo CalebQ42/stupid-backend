@@ -8,15 +8,16 @@ type ApiKey struct {
 type GlobalUser struct {
 	Username    string `json:"username"`
 	Password    string `json:"password"`
+	Salt        string `json:"salt"`
 	Email       string `json:"email"`
 	Failed      int    `json:"failed"`
 	LastTimeout int64  `json:"lastTimout"`
 }
 
 type AuthReturn struct {
-	ID     string `json:"_id"`
-	Timout int    `json:"timeout"`
+	ID     string `json:"uuid"`
 	Token  string `json:"token"`
+	Timout int    `json:"timeout"`
 }
 
 type AppUser struct {
