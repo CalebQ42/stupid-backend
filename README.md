@@ -157,7 +157,7 @@ Global User:
 {
   "uuid": "uuid",
   "username": "name",
-  "password": "hashed password", //I need to do research on security before I really set this part up...
+  "password": "hashed password", //Argon2ID 32 byte key.
   "salt": "salt",
   "email": "email@email.com", //Probably won't be present or used for a while. Only present to be used in the future for account recovery.
   "failed": 0, //Failed logins. Timout occurs every 3 failed logins.
