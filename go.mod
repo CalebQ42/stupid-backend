@@ -3,8 +3,8 @@ module github.com/CalebQ42/stupid-backend
 go 1.19
 
 require (
-	go.mongodb.org/mongo-driver v1.10.1
-	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
+	go.mongodb.org/mongo-driver v1.10.2
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 )
 
 require (
