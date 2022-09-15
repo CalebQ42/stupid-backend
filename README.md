@@ -53,24 +53,21 @@ This is just an idea on how the API will be structured. Subject to change (just 
 
 > `GET: /?features&key=apiKey`
 
-Features:
-
-```text
-c - Get User Count
-l - Log App Connections
-g - Global Users
-u - User Data
-a - App Data
-r - Crash Reporting
-```
-
 Returns:
 
 ```JSON
 {
-  "_id": "api key",
-  "features": "clguar", //If the letter above is present, the key can acces that feature.
-  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration. Subject to change.
+  "key": "api key",
+  "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration (a key can be revoked at any point in time).
+  "features": {
+    "count": true, //Get user count
+    "log": true, //Log connection
+    "global": true, //Create and log into user accounts
+    "userData": true, //Access user data
+    "appData": true, //Access app data
+    "crash": true, //Send crash reports
+  },
+  "custom": {} //May or may not be present. Allows for implementation specific permissions.
 }
 ```
 
@@ -121,9 +118,9 @@ Request Body:
 
 ```JSON
 {
-  "uuid": "uuid",
   "username": "username",
-  "password": "password"
+  "password": "password",
+  "email": "email"
 }
 ```
 
@@ -137,21 +134,36 @@ Return:
 }
 ```
 
+### Get Data (Application or User)
+
+> `GET: /?data&key=apiKey&token=jwt token&query=graphQL query`
+
+Returns data according to the GraphQL query. If requesting appplication data, token is not required.
+
 ## Data Model
 
 This is all just an idea on how the data will be organized in the DB. Subject to change (just like everything else right now).
 
-API Keys:
+### API Key
 
 ```JSON
 {
   "key": "api key",
-  "features": "clguar", //Look at the api for getting features to see what these mean.
+  "appID": "app id", //Enable a single backend to be used for multiple apps easily.
   "death": -1, //Unix timestamp for when the key will expire. If -1, the key has no planned expiration (a key can be revoked at any point in time).
+  "features": {
+    "count": true, //Get user count
+    "log": true, //Log connection
+    "global": true, //Create and log into user accounts
+    "userData": true, //Access user data
+    "appData": true, //Access app data
+    "crash": true, //Send crash reports
+  },
+  "custom": {} //May or may not be present. Allows for implementation specific permissions. Should follow the same structure as features.
 }
 ```
 
-Global User:
+### Global User
 
 ```JSON
 {
@@ -165,54 +177,47 @@ Global User:
 }
 ```
 
-App User:
+### App User
 
 ```JSON
 {
   "uuid": "uuid",
   "hasGlobal": true,
-  "lastConnected": 20220808 //Records should be deleted if not connected after 30 days. User data should only be deleted if the global account is deleted.
+  "lastConnected": 20220808 //Records should be deleted if not connected after 30 days.
 }
 ```
 
-Application Data:
+### Application Data
+
+Application data must contain the below field, but otherwise can contain any amount of other fields depending on implementation.
 
 ```JSON
 {
   "uuid": "uuid",
-  "displayName": "name to be displayed to user",
-  "type": "type", //TBD by application. Suggestions include data, config.
-  "data": {} //Determined by the application and type.
 }
 ```
 
-User Data:
+### User Data
+
+User data must contain the below fields, but otherwise can contain any amount of other fields depending on implemenentation.
 
 ```JSON
 {
   "uuid": "uuid",
-  "owner": "user id", //ID of the global user. App users should NOT have info stored.
-  "globalRead": false, //Can anyone see this?
-  "readPerm": [ //Other users with permission to read the data
-    "user id"
-  ],
-  "writePerm": [ //Other users with permission to write the data
-    "user id"
-  ],
-  "data": {} //Determined by the application.
+  "owner": "user uuid", //ID of the global user. App users should NOT have info stored.
 }
 ```
 
-Crash reports:
+### Crash reports
 
 ```JSON
 {
-  "error": "first line of error", //This is to attempt to group together multiple instances of the same error. Possible could become the _id. Possibly might need to be something different.
+  "error": "first line of error", //This is to attempt to group together multiple instances of the same error. Possibly might need to be something different.
   "reports": [
     {
-      "_id": "uuid", //This is generated at time of crash. Prevents double sending of crash reports (such as if the report needs to be sent on next app launch)
+      "id": "uuid", //This is generated at time of crash. Prevents double sending of crash reports (such as if the report needs to be sent on next app launch)
       "stack": "stacktrace",
-      "action": "characters" //What page or activity the user was doing
+      "action": "characters" //What page or activity the user was doing.
     }
   ]
 }
