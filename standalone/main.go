@@ -17,32 +17,37 @@ import (
 
 func help() {
 	fmt.Println("Usage: stupid -tlsdir <tls key location> <mongodb connection string>")
+	fmt.Println()
 	flag.PrintDefaults()
 }
 
 func main() {
-	appList := flag.String("apps", "testing", "Comma deliniated list of apps to use. If none given, uses \"testing\". If API Keys are not already created, new keys are created.")
-	port := flag.Int("port", 4223, "Port to open requests on. Defaults to 4223.")
+	appList := flag.String("apps", "testing", "Comma deliniated list of apps to use. If API Keys are not already created, new keys are created.")
+	port := flag.Int("port", 4223, "Port to open requests on.")
 	keysDir := flag.String("tlsdir", "", "Directory with key.pem and cert.pem. Defaults to $HOME. Required.")
 	flag.Usage = help
 	flag.Parse()
 	args := flag.Args()
 	if len(args) < 1 {
-		panic("Please provied MongoDB connection string")
+		fmt.Println("Please provied MongoDB connection string")
+		os.Exit(1)
 	}
-	if !strings.HasPrefix(args[0], "mongo://") {
-		panic("Provided MongoDB connection string is not a Mongo address")
+	if !strings.HasPrefix(args[0], "mongodb://") {
+		fmt.Println("Provided MongoDB connection string is not a Mongo address")
+		os.Exit(1)
 	}
 	var err error
 	if *keysDir == "" {
 		*keysDir, err = os.UserHomeDir()
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
+			os.Exit(1)
 		}
 	}
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(args[0]))
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	appIDs := strings.Split(*appList, ",")
 	for i := range appIDs {
