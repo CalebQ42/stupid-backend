@@ -14,13 +14,13 @@ Everything here is not concrete.
         "log": true,
         "registeredUsers": true,
         "sendCrash": true,
-        "getCount": true,
+        "getCount": false,
         "backend": false, //Catch-all for backend site access. Might be removed and replaced with more granular control in the future.
     }
 }
 ```
 
-## Registered Users (stupid-backend/regUser)
+## Registered Users (stupid-backend/regUsers)
 
 ```json
 {
