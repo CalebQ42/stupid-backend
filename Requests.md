@@ -37,7 +37,7 @@ Request Body:
 }
 ```
 
-Return Body:
+Return Body (If successful):
 
 ```json
 {
