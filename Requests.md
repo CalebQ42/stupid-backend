@@ -45,3 +45,15 @@ Return Body (If successful):
     "token": "jwt token"
 }
 ```
+
+## Data Request
+
+Not Authenticated:
+
+> HTTPS/POST: /?data&key=apiKey
+
+Authenticated:
+
+> HTTPS/POST: /?data&key=apiKey&token=jwt token
+
+Data requests are implementation specific and may include more query values or a body.

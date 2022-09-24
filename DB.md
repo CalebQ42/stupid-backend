@@ -39,6 +39,7 @@ These records should not be kept for 30 days and will be cleaned every 24 hours.
 ```json
 {
     "_id": "uuid",
+    "platform": "Android", //Android, iOS, Web, Linux, Windows, etc...
     "lastConnection": 20220922 //YYYYMMDD
 }
 ```
