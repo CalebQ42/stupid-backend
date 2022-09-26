@@ -16,6 +16,9 @@ Everything here is not concrete.
         "sendCrash": true,
         "getCount": false,
         "backend": false, //Catch-all for backend site access. Might be removed and replaced with more granular control in the future.
+        //Suggested features for data.
+        "appData": true, //Unathenticated requests
+        "userData": true, //Authenticated requests
     }
 }
 ```
@@ -28,9 +31,13 @@ Everything here is not concrete.
     "username": "username",
     "password": "hashed password",
     "salt": "password salt",
-    "email": "email"
+    "email": "email",
+    "failed": 0, //Number of failed login attempts. Timeout occurs every 3 failed attempts.
+    "lastTimeout": 0 //Unix timestamp of the last timeout.
 }
 ```
+
+Timeout time: 3^((failed/3)-1) minutes. Maxes out at 18 failed attempts at a little over 4 hours of timeout.
 
 ## Logged Connection (appID/log)
 
@@ -39,23 +46,35 @@ These records should not be kept for 30 days and will be cleaned every 24 hours.
 ```json
 {
     "_id": "uuid",
-    "platform": "Android", //Android, iOS, Web, Linux, Windows, etc...
-    "lastConnection": 20220922 //YYYYMMDD
+    "plat": "Android", //Android, iOS, Web, Linux, Windows, etc...
+    "lastConn": 20220922 //YYYYMMDD
 }
 ```
 
 ## Crash Reports (appID/crashes)
 
+Single Crash Report:
+
+```json
+{
+    "_id": "uuid", //to prevent duplicate errors being sent
+    "err": "error",
+    "plat": "platform", //Android, iOS, Web, Linux, Windows, etc...
+    "stack": "stacktrace",
+}
+```
+
+Grouped Crash Report (what's actually stored):
+
 ```json
 {
     "_id": "uuid",
-    "firstLine": "first line of error", //Allows errors of the same type to be groupped together
-    "errors": [
-        {
-            "uuid": "uuid", //to prevent duplicate errors being sent
-            "platform": "platform", //Android, iOS, Web, Linux, Windows, etc...
-            "stack": "stacktrace",
-        }
-    ]
+    "err": "error",
+    "first": "first line of stack", // Better grouping for errors.
+    "errors": [] // An array of single crash reports.
 }
 ```
+
+## Data Suggestions
+
+The ability to store and retrieve data is an optional part

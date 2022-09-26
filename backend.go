@@ -2,8 +2,10 @@ package stupid
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -14,17 +16,23 @@ import (
 )
 
 type Backend struct {
-	client  *mongo.Client
-	ApiKeys *mongo.Collection
-	Users   *mongo.Collection
-	apps    map[string]App
-	running bool
+	client    *mongo.Client
+	ApiKeys   *mongo.Collection
+	Users     *mongo.Collection
+	extension BackendExtension
+	apps      map[string]App
+	running   bool
 }
 
 func NewBackend(client *mongo.Client) *Backend {
 	return &Backend{
 		client: client,
+		apps:   make(map[string]App),
 	}
+}
+
+func (b *Backend) SetExtention(e BackendExtension) {
+	b.extension = e
 }
 
 func (b *Backend) AddApps(app ...App) error {
@@ -60,7 +68,76 @@ func (b *Backend) Init() {
 }
 
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	fmt.Println("yo")
+	query := req.URL.Query()
+	if !query.Has("key") {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	key, err := b.GetAPIKey(query.Get("key"))
+	if err == mongo.ErrNoDocuments {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	} else if err != nil {
+		log.Println("Err while validating api key:", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if query.Has("features") {
+		var out []byte
+		out, err = json.Marshal(key)
+		if err != nil {
+			log.Println("Err while marshalling API key:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = writer.Write(out)
+		if err != nil {
+			log.Println("Err while sending API key:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	app, ok := b.apps[key.AppID]
+	if !ok {
+		log.Println("API Key used for an app that's not set up, but API Key exists:", key.AppID)
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if query.Has("log") && key.Features["log"] {
+		if !query.Has("uuid") {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		//TODO
+	}
+	//TODO: MORE!
+	//TODO: If token is present, authenticate
+	_ = app
+	if b.extension != nil {
+		req := Request{
+			ReqBody:     req.Body,
+			Query:       query,
+			KeyFeatures: key.Features,
+			//TODO: add UserID if authenticated.
+		}
+		var bod []byte
+		bod, err = b.extension.HandleRequest(req)
+		if err == ErrBadRequest {
+			writer.WriteHeader(http.StatusBadRequest)
+		} else if err == ErrUnauthorized {
+			writer.WriteHeader(http.StatusUnauthorized)
+		} else if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		_, err = writer.Write(bod)
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	writer.WriteHeader(http.StatusBadRequest)
 }
 
 // Creates an API Key for the given app with the given features. If features is nil, creates a key with log, registeredUsers, and sendCrash as true.
@@ -92,6 +169,16 @@ func (b Backend) GenerateAPIKey(appID string, features map[string]bool, alias st
 	return err
 }
 
+func (b Backend) GetAPIKey(key string) (out *ApiKey, err error) {
+	res := b.ApiKeys.FindOne(context.TODO(), bson.D{{Key: "_id", Value: key}})
+	if res.Err() != nil {
+		return nil, res.Err()
+	}
+	out = new(ApiKey)
+	err = res.Decode(out)
+	return
+}
+
 func (b Backend) clean(id string) (err error) {
 	if id == "" {
 		for i := range b.apps {
@@ -105,7 +192,7 @@ func (b Backend) clean(id string) (err error) {
 	now := time.Now()
 	dayInt := int(now.Year())*10000 + int(now.Month())*100 + int(now.Day())
 	filter := options.Find().SetMin(bson.D{{Key: "lastConnected", Value: dayInt}})
-	res, err := b.apps[id].Logs().Find(context.TODO(), bson.D{}, filter)
+	res, err := b.apps[id].Logs().Find(context.TODO(), bson.D{}, filter) //TODO: stuff
 	if err != nil && err != mongo.ErrNoDocuments {
 		return
 	}

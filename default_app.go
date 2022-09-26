@@ -33,3 +33,6 @@ func (d DefaultApp) Crashes() *mongo.Collection {
 func (d *DefaultApp) Initialize() error {
 	return nil
 }
+
+// TODO
+type DefaultDataApp struct{}

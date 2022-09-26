@@ -54,11 +54,14 @@ func main() {
 	for i := range appIDs {
 		appIDs[i] = strings.TrimSpace(appIDs[i])
 	}
-	apps := make([]*stupid.DefaultApp, len(appIDs))
-	for i := range apps {
-		apps[i] = stupid.NewDefaultApp(appIDs[i], client)
-	}
 	backend := stupid.NewBackend(client)
+	for i := range appIDs {
+		err = backend.AddApps(stupid.NewDefaultApp(appIDs[i], client))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
 	backend.Init()
 
 	for i := range appIDs {

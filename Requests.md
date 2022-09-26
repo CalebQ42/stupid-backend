@@ -6,11 +6,13 @@ Everything here is not concrete.
 
 > HTTPS/GET: /?features&key=apiKey
 
-Returns [Api Key](DB.md#api-key)
+Returns [Api Key](DB.md#api-key-stupid-backendkeys)
 
 ## User Count
 
-> HTTPS/GET: /?count&key=apiKey
+> HTTPS/GET: /?count&key=apiKey&plat=platform
+
+Platform query value is optional.
 
 Return
 
@@ -22,7 +24,13 @@ Return
 
 ## Log User
 
-> HTTPS/POST: /?log&key=apiKey&uuid=uuid
+> HTTPS/POST: /?log&key=apiKey&uuid=uuid&plat=platform
+
+## Crash Report
+
+> HTTPS/POST: /?log&key=apiKey
+
+Request Body should be an [single crash report](DB.md#crash-reports-appidcrashes)
 
 ## Authenticate
 
@@ -48,12 +56,6 @@ Return Body (If successful):
 
 ## Data Request
 
-Not Authenticated:
-
-> HTTPS/POST: /?data&key=apiKey
-
-Authenticated:
-
 > HTTPS/POST: /?data&key=apiKey&token=jwt token
 
-Data requests are implementation specific and may include more query values or a body.
+Token is only necessary for authenticated requests.
