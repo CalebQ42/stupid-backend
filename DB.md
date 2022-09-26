@@ -14,7 +14,6 @@ Everything here is not concrete.
         "log": true,
         "registeredUsers": true,
         "sendCrash": true,
-        "getCount": false,
         "backend": false, //Catch-all for backend site access. Might be removed and replaced with more granular control in the future.
         //Suggested features for data.
         "appData": true, //Unathenticated requests
@@ -71,7 +70,7 @@ Grouped Crash Report (what's actually stored):
     "_id": "uuid",
     "err": "error",
     "first": "first line of stack", // Better grouping for errors.
-    "errors": [] // An array of single crash reports.
+    "crashes": [] // An array of single crash reports.
 }
 ```
 

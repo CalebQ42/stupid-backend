@@ -35,5 +35,5 @@ type GroupCrash struct {
 	ID        string     `bson:"_id" json:"_id"`
 	Err       string     `bson:"err" json:"err"`
 	FirstLine string     `bson:"first" json:"first"`
-	Errors    []IndCrash `bson:"errors" json:"errors"`
+	Crashes   []IndCrash `bson:"crashes" json:"crashes"`
 }

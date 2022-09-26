@@ -8,27 +8,13 @@ Everything here is not concrete.
 
 Returns [Api Key](DB.md#api-key-stupid-backendkeys)
 
-## User Count
-
-> HTTPS/GET: /?count&key=apiKey&plat=platform
-
-Platform query value is optional.
-
-Return
-
-```json
-{
-    "count": 0, //User count
-}
-```
-
 ## Log User
 
 > HTTPS/POST: /?log&key=apiKey&uuid=uuid&plat=platform
 
 ## Crash Report
 
-> HTTPS/POST: /?log&key=apiKey
+> HTTPS/POST: /?crash&key=apiKey
 
 Request Body should be an [single crash report](DB.md#crash-reports-appidcrashes)
 
