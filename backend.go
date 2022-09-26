@@ -53,8 +53,8 @@ func (b *Backend) Init() {
 	cleanTicker := time.NewTicker(time.Hour * 24)
 	go func() {
 		for {
-			<-cleanTicker.C
 			b.clean("")
+			<-cleanTicker.C
 		}
 	}()
 }
@@ -100,6 +100,7 @@ func (b Backend) clean(id string) (err error) {
 				return
 			}
 		}
+		return
 	}
 	now := time.Now()
 	dayInt := int(now.Year())*10000 + int(now.Month())*100 + int(now.Day())

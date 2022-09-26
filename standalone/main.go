@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/CalebQ42/stupid-backend"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -59,7 +60,30 @@ func main() {
 	}
 	backend := stupid.NewBackend(client)
 	backend.Init()
-	//TODO: check for keys and create new ones.
+
+	for i := range appIDs {
+		var res *mongo.Cursor
+		res, err = backend.ApiKeys.Find(context.TODO(), bson.D{{Key: "appID", Value: appIDs[i]}})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		var keys []stupid.ApiKey
+		err = res.All(context.TODO(), &keys)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if len(keys) > 0 {
+			continue
+		}
+		err = backend.GenerateAPIKey(appIDs[i], nil, "default key for "+appIDs[i])
+		fmt.Println("Generating key for " + appIDs[i])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
 	err = http.ListenAndServeTLS(":"+strconv.Itoa(*port), path.Join(*keysDir, "cert.pem"), path.Join(*keysDir, "key.pem"), backend)
 	fmt.Println(err)
 }
