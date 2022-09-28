@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/CalebQ42/stupid-backend"
@@ -24,7 +23,7 @@ func help() {
 
 func main() {
 	appList := flag.String("apps", "testing", "Comma deliniated list of apps to use. If API Keys are not already created, new keys are created.")
-	port := flag.Int("port", 4223, "Port to open requests on.")
+	addr := flag.String("addr", ":4223", "Address to open the server on.")
 	keysDir := flag.String("tlsdir", "", "Directory with key.pem and cert.pem. Defaults to $HOME. Required.")
 	flag.Usage = help
 	flag.Parse()
@@ -87,6 +86,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	err = http.ListenAndServeTLS(":"+strconv.Itoa(*port), path.Join(*keysDir, "cert.pem"), path.Join(*keysDir, "key.pem"), backend)
+	err = http.ListenAndServeTLS(*addr, path.Join(*keysDir, "cert.pem"), path.Join(*keysDir, "key.pem"), backend)
 	fmt.Println(err)
 }

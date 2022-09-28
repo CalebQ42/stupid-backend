@@ -96,8 +96,16 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		res := app.Crashes().FindOne(context.TODO(), bson.D{{Key: "crashes._id", Value: crash.ID}})
+		if res.Err() == nil {
+			return
+		} else if res.Err() != mongo.ErrNoDocuments {
+			log.Println("Err while finding existing crash report:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		firstLine, _, _ := strings.Cut(crash.Stack, "\n")
-		res := app.Crashes().FindOneAndUpdate(context.TODO(), bson.D{{Key: "err", Value: crash.Err}, {Key: "first", Value: firstLine}}, bson.D{{Key: "$addToSet", Value: bson.D{{Key: "crashes", Value: crash}}}})
+		res = app.Crashes().FindOneAndUpdate(context.TODO(), bson.D{{Key: "err", Value: crash.Err}, {Key: "first", Value: firstLine}}, bson.D{{Key: "$addToSet", Value: bson.D{{Key: "crashes", Value: crash}}}})
 		if res.Err() == mongo.ErrNoDocuments {
 			newGroup := GroupCrash{
 				ID:        uuid.NewString(),
