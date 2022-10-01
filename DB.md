@@ -12,10 +12,10 @@ Everything here is not concrete.
     "death": -1, //unix timestamp of the planned death of the API Key. If -1, the key has no planned expiration. Keys may be expired at any time without notice.
     "features": { //should be parsed as a map[string]bool. More features can be added as needed by the application.
         "log": true,
-        "registeredUsers": true,
+        "registeredUsers": true, //Create and authenticate registered users.
         "sendCrash": true,
         "backend": false, //Catch-all for backend site access. Might be removed and replaced with more granular control in the future.
-        //Suggested features for data. API Key features should be managed by the DataApp.
+        //Suggested features for data. API Key data features should be checked by the DataApp.
         "appData": true, //Unathenticated requests
         "userData": true, //Authenticated requests
     }
@@ -28,8 +28,8 @@ Everything here is not concrete.
 {
     "_id": "uuid",
     "username": "username",
-    "password": "hashed password", // argon2ID 32 byte hashed password.
-    "salt": "password salt",
+    "password": "hashed password", // argon2ID 32 byte hashed password. Base64 Encoded
+    "salt": "password salt", // 16 byte salt. Base64Encoded.
     "email": "email",
     "failed": 0, //Number of failed login attempts. Timeout occurs every 3 failed attempts.
     "lastTimeout": 0 //Unix timestamp of the last timeout.

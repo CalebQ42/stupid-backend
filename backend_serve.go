@@ -2,6 +2,8 @@ package stupid
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log"
@@ -34,14 +36,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if query.Has("features") {
-		var out []byte
-		out, err = json.Marshal(key)
-		if err != nil {
-			log.Println("Err while marshalling API key:", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		_, err = writer.Write(out)
+		err = retMarshallable(key, writer)
 		if err != nil {
 			log.Println("Err while sending API key:", err)
 			writer.WriteHeader(http.StatusInternalServerError)
@@ -127,9 +122,90 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+	if query.Has("createUser") {
+		if !key.Features["registeredUsers"] {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if req.Method != http.MethodPost {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var dat []byte
+		dat, err = io.ReadAll(req.Body)
+		if err != nil {
+			log.Println("Err while reading body for create:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if len(dat) == 0 {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var body CreateRequest
+		err = json.Unmarshal(dat, &body)
+		if err != nil || body.Password == "" || body.Username == "" || body.Email == "" {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var ret CreateReturn
+		res := b.Users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
+		if res.Err() == nil {
+			ret.Problem = "username"
+			err = retMarshallable(ret, writer)
+			if err != nil {
+				log.Println("Err while returning create request:", err)
+			}
+			return
+		} else if res.Err() != mongo.ErrNoDocuments {
+			log.Println("Err while returning create request:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if len(body.Password) > 32 || len(body.Password) < 5 {
+			ret.Problem = "password"
+			err = retMarshallable(ret, writer)
+			if err != nil {
+				log.Println("Err while returning create request:", err)
+			}
+			return
+		}
+		salt := make([]byte, 16)
+		_, err = rand.Reader.Read(salt)
+		if err != nil {
+			log.Println("Err while generating salt:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		newUser := RegUser{
+			ID:       uuid.NewString(),
+			Username: body.Username,
+			Password: base64.RawStdEncoding.EncodeToString(argon2.IDKey([]byte(body.Password), salt, 1, 64*1024, 4, 32)),
+			Salt:     base64.RawStdEncoding.EncodeToString(salt),
+			Email:    body.Email,
+		}
+		_, err = b.Users.InsertOne(context.TODO(), newUser)
+		if err != nil {
+			log.Println("Err while inserting new user:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ret.ID = newUser.ID
+		//TODO: generate jwt token
+		err = retMarshallable(ret, writer)
+		if err != nil {
+			log.Println("Err while inserting new user:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
 	if query.Has("auth") {
 		if !key.Features["registeredUsers"] {
 			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if req.Method != http.MethodPost {
+			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		var dat []byte
@@ -152,8 +228,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		var ret AuthReturn
 		res := b.Users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
 		if res.Err() == mongo.ErrNoDocuments {
-			out, _ := json.Marshal(ret)
-			_, err = writer.Write(out)
+			err = retMarshallable(ret, writer)
 			if err != nil {
 				log.Println("Err while returning auth request:", err)
 			}
@@ -172,14 +247,13 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		//TODO: timeout.
 		body.Password = string(argon2.IDKey([]byte(body.Password), []byte(user.Salt), 1, 64*1024, 4, 32))
-		if body.Password != user.Password {
+		if base64.RawStdEncoding.EncodeToString([]byte(body.Password)) != user.Password {
 			//TODO: increment failed
 			return
 		}
 		ret.ID = user.ID
 		//TODO: Generate jwt token
 	}
-	//TODO: Create User
 	//TODO: If token is present, authenticate
 	if b.extension != nil {
 		req := Request{
@@ -206,4 +280,13 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	writer.WriteHeader(http.StatusBadRequest)
+}
+
+func retMarshallable(m any, w io.Writer) (err error) {
+	out, err := json.Marshal(m)
+	if err != nil {
+		return
+	}
+	_, err = w.Write(out)
+	return
 }
