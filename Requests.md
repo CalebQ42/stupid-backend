@@ -31,7 +31,33 @@ Request Body:
 }
 ```
 
-Return Body (If successful):
+Return Body:
+
+```json
+{
+    "_id": "uuid",
+    "token": "jwt token",
+    "timeout": 0, //Returns minutes until timeout is up if currently timed-out.
+}
+```
+
+If the username or password was incorrect, `_id` and `token` will be empty strings and timeout will be 0.
+
+## Create User
+
+> HTTPS/POST: /?createUser&key=apiKey
+
+Request Body:
+
+```json
+{
+    "username": "username",
+    "password": "password",
+    "email": "email"
+}
+```
+
+Return Body:
 
 ```json
 {

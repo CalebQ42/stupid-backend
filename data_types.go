@@ -18,6 +18,17 @@ type RegUser struct {
 	LastTimeout int    `bson:"lastTimeout" json:"lastTimeout"`
 }
 
+type AuthRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type AuthReturn struct {
+	ID      string `json:"_id"`
+	Token   string `json:"token"`
+	Timeout int    `json:"timeout"`
+}
+
 type ConLog struct {
 	ID       string `bson:"_id" json:"_id"`
 	Platform string `bson:"plat" json:"plat"`

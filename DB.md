@@ -15,7 +15,7 @@ Everything here is not concrete.
         "registeredUsers": true,
         "sendCrash": true,
         "backend": false, //Catch-all for backend site access. Might be removed and replaced with more granular control in the future.
-        //Suggested features for data.
+        //Suggested features for data. API Key features should be managed by the DataApp.
         "appData": true, //Unathenticated requests
         "userData": true, //Authenticated requests
     }
@@ -28,7 +28,7 @@ Everything here is not concrete.
 {
     "_id": "uuid",
     "username": "username",
-    "password": "hashed password",
+    "password": "hashed password", // argon2ID 32 byte hashed password.
     "salt": "password salt",
     "email": "email",
     "failed": 0, //Number of failed login attempts. Timeout occurs every 3 failed attempts.
@@ -36,7 +36,7 @@ Everything here is not concrete.
 }
 ```
 
-Timeout time: 3^((failed/3)-1) minutes. Maxes out at 18 failed attempts at a little over 4 hours of timeout.
+Timeout time: 3^((failed/3)-1) minutes. Timeout only occurs every 3 failed attempts. Maxes out at 18 failed attempts at a little over 4 hours of timeout.
 
 ## Logged Connection (appID/log)
 
@@ -74,6 +74,14 @@ Grouped Crash Report (what's actually stored):
 }
 ```
 
-## Data Suggestions
+## Data
 
-The ability to store and retrieve data is an optional part
+Fields required for DefaultDataApp and can also be a suggestion for DataApp's.
+
+```json
+{
+    "_id": "uuid",
+    "owner": "registered user's uuid",
+    // Further fields containing all the actual data.
+}
+```

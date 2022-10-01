@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/argon2"
 )
 
 func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
@@ -126,7 +127,59 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	//TODO: Authenticate!
+	if query.Has("auth") {
+		if !key.Features["registeredUsers"] {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		var dat []byte
+		dat, err = io.ReadAll(req.Body)
+		if err != nil {
+			log.Println("Err while reading body for auth:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if len(dat) == 0 {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var body AuthRequest
+		err = json.Unmarshal(dat, &body)
+		if err != nil || body.Password == "" || body.Username == "" {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		var ret AuthReturn
+		res := b.Users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
+		if res.Err() == mongo.ErrNoDocuments {
+			out, _ := json.Marshal(ret)
+			_, err = writer.Write(out)
+			if err != nil {
+				log.Println("Err while returning auth request:", err)
+			}
+			return
+		} else if res.Err() != nil {
+			log.Println("Err while checking for registered user:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var user RegUser
+		err = res.Decode(&user)
+		if err != nil {
+			log.Println("Err while decoding registered user:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		//TODO: timeout.
+		body.Password = string(argon2.IDKey([]byte(body.Password), []byte(user.Salt), 1, 64*1024, 4, 32))
+		if body.Password != user.Password {
+			//TODO: increment failed
+			return
+		}
+		ret.ID = user.ID
+		//TODO: Generate jwt token
+	}
+	//TODO: Create User
 	//TODO: If token is present, authenticate
 	if b.extension != nil {
 		req := Request{
