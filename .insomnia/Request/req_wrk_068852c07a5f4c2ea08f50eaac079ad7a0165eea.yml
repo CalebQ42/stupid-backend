@@ -1,0 +1,21 @@
+_id: req_wrk_068852c07a5f4c2ea08f50eaac079ad7a0165eea
+type: Request
+parentId: wrk_068852c07a5f4c2ea08f50eaac079ad7
+modified: 1665033877832
+created: 1665033877832
+url: "{{ base_url }}/features"
+name: /features
+description: ""
+method: GET
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1665033877832
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
