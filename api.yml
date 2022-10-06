@@ -1,4 +1,4 @@
-openapi: 3.0.2
+openapi: 3.0.0
 info: 
   title: stupid-backend
   license:
@@ -7,6 +7,10 @@ info:
   version: 1.0.0
 components:
   schemas:
+    plat:
+      type: string
+      description: Device's platform. Android, iOS, Web, Linux, Windows, etc.
+      default: "Android"
     API Key:
       type: object
       properties:
@@ -28,6 +32,17 @@ components:
             registeredUsers: true
             sendCrash: true
             backend: false
+    Create User Request:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        email:
+          type: string
+          format: email
     Registered User:
       type: object
       properties:
@@ -46,9 +61,76 @@ components:
         email:
           type: string
           format: email
+        failed:
+          type: integer
+          description: Number of failed attempts. Timeout occurs every 3 fails.
+        lastTimeout:
+          type: integer
+          description: Unix timestamp of the last timeout.
+    Logged Connection:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Device's UUID
+        plat:
+          $ref: "#/components/schemas/plat"
+        lastConn:
+          type: integer
+          description: YYYYMMDD of the last day device was connected.
+          default: 20221006
+    SingleCrash:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: UUID of this particular crash.
+        err:
+          type: string
+          description: The error
+        plat:
+          $ref: "#/components/schemas/plat"
+        stack:
+          type: string
+          description: Stacktrace
+    Crashes:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: UUID of this particular crash
+        err:
+          type: string
+          description: The error
+        first:
+          type: string
+          description: The first line of the stacktrace for better grouping.
+        crashes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SingleCrash"
+    Data:
+      type: object
+      description: The needed fields for DefaultDataApp, and also suggested fields for custom implementations
+      properties:
+        _id:
+          type: string
+          description: UUID of the data
+        owner:
+          type: string
+          description: UUID of the registered user that owns this data.
+  parameters:
+    Key:
+      name: key
+      in: query
+      required: true
+      schema:
+        type: string
 paths:
   /features:
     description: Get the details of the API Key, including it's capabilities
+    parameters:
+      - $ref: "#/components/parameters/Key"
     get:
       responses:
         '200':
@@ -57,3 +139,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/API Key"
+        '401':
+          description: API Key is invalid
+  /log:
+    description: Log a device
+    parameters:
+      - $ref: "#/components/parameters/Key"
+      - name: uuid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: plat
+        in: query
+        required: true
+        schema:
+          type: string
+        example: Android
+    post:
+      responses:
+        '200':
+          description: Succcessfully logged
+  /crash:
+    description: Log a crash
+    post:
+      requestBody:
+        $ref: "#/components/schemas/SingleCrash"
+      parameters:
+        - $ref: "#/components/parameters/Key"
+      responses:
+        '200':
+          description: Succcessfully logged
+        '401':
+          description: API Key is invalid or not allowed to report crashes
+  /createUser:
+    description: Create a new registered user.
+
+
+        
