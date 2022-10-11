@@ -109,9 +109,47 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SingleCrash"
+    CreateUserReq:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+          description: Password must be between 5 - 32 characters long.
+        email:
+          type: string
+          format: email
+    CreateUserResp:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token
+        problem:
+          type: string
+          description: If there's a problem with creating the user, problem is populated. If username, username is already taken. If password, password isn't valid.
+    AuthReq:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    AuthResp:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+        timeout:
+          type: integer
+          description: The remaining minutes until timeout is done. 0 if not timed out.
     Data:
       type: object
-      description: The needed fields for DefaultDataApp, and also suggested fields for custom implementations
+      description: The needed fields for DefaultDataApp, and also suggested fields for custom implementations. Further fields WILL be present.
       properties:
         _id:
           type: string
@@ -119,9 +157,43 @@ components:
         owner:
           type: string
           description: UUID of the registered user that owns this data.
+        hint:
+          type: string
+          description: A hint at the contents of the content.
+    DataIDs:
+      type: object
+      description: Returns when using list Data request.
+      properties:
+        _id:
+          type: string
+          description: UUID of the data
+        hint:
+          type: string
+          description: A hint about the data content.
+    DataResp:
+      type: object
+      description: Response from a data request. Only the fields requested will be populated.
+      properties:
+        ids:
+          description: Only populated when doing a list data request.
+          nullable: true
+          type: array
+          items:
+            $ref: "#/components/schemas/DataIDs"
+        data:
+          description: Populated when a UUID is given when requesting data.
+          nullable: true
+          $ref: "#/components/schemas/Data"
+        allData:
+          description: Populated when doing an allData data request.
+          nullable: true
+          type: array
+          items:
+            $ref: "#/components/schemas/Data"
   parameters:
     Key:
       name: key
+      description: API Key used
       in: query
       required: true
       schema:
@@ -158,7 +230,7 @@ paths:
         example: Android
     post:
       responses:
-        '200':
+        '201':
           description: Succcessfully logged
   /crash:
     description: Log a crash
@@ -168,12 +240,77 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Key"
       responses:
-        '200':
+        '201':
           description: Succcessfully logged
         '401':
           description: API Key is invalid or not allowed to report crashes
   /createUser:
     description: Create a new registered user.
+    post:
+      requestBody:
+        $ref: "#/components/schemas/CreateUserReq"
+      parameters:
+        - $ref: "#/components/parameters/Key"
+      responses:
+        '200':
+          description: Successfully created user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserResp"
+        '401':
+          description: API Key is invalid or not allowed to create users
+  /auth:
+    description: Authenticate
+    post:
+      requestBody:
+        $ref: "#/components/schemas/AuthReq"
+      parameters:
+        - $ref: "#/components/parameters/Key"
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResp"
+        '401':
+          description: API Key is invalid or not allowed to authenticate
+  /data:
+    description: Data request for DefaultDataApp.
+    get:
+      parameters:
+        - $ref: "#/components/parameters/Key"
+        - name: token
+          description: JWT token for authenticated data requests. If present, only returns results that the user owns.
+          in: query
+          schema:
+            type: string
+        - name: req
+          description: What you want to get from the request. req or uuid MUST be present. list - get UUIDs of available data along with hints. allData - get all available data.
+          in: query
+          schema:
+            type: string
+        - name: uuid
+          description: Which data to retrieve. req or uuid MUST be present.
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns the requested data.
+          content:
+            application/json:
+              schema:
+                $ref: "##/components/schemas/DataResp"
+        '204':
+          description: req or uuid returned no results.
+        '400':
+          description: Both req and uuid are present, or neither are present.
+        '401':
+          description: API Key is invalid or not allowed to get data.
+        
+
 
 
         
