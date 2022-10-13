@@ -12,6 +12,7 @@ type Request struct {
 	ReqBody     io.ReadCloser   // The request's body. Might be empty or nil.
 	Query       url.Values      // The request's URL Query.
 	KeyFeatures map[string]bool // The features of the API Key that made the request.
+	Path        string          // Request's URL path.
 	UserID      string          // The UUID of the user if the request was authenticated with a token. Will be an empty if no token was provided.
 }
 

@@ -26,16 +26,17 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	path := req.URL.Path
 	key, err := b.GetAPIKey(query.Get("key"))
 	if err == mongo.ErrNoDocuments {
-		writer.WriteHeader(http.StatusBadRequest)
+		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	} else if err != nil {
 		log.Println("Err while validating api key:", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if query.Has("features") {
+	if path == "/features" {
 		err = retMarshallable(key, writer)
 		if err != nil {
 			log.Println("Err while sending API key:", err)
@@ -49,7 +50,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if query.Has("log") {
+	if path == "/log" {
 		if !key.Features["log"] {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
@@ -73,7 +74,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	if query.Has("crash") {
+	if path == "/crash" {
 		if !key.Features["sendCrash"] {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
@@ -122,7 +123,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	if query.Has("createUser") {
+	if path == "/createUser" {
 		if !key.Features["registeredUsers"] {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
@@ -199,7 +200,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	if query.Has("auth") {
+	if path == "/auth" {
 		if !key.Features["registeredUsers"] {
 			writer.WriteHeader(http.StatusUnauthorized)
 			return
@@ -260,6 +261,7 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			ReqBody:     req.Body,
 			Query:       query,
 			KeyFeatures: key.Features,
+			Path:        path,
 			//TODO: add UserID if authenticated.
 		}
 		var bod []byte
