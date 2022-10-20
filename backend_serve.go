@@ -132,6 +132,11 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		if _, ok := app.(AuthenticatedDataApp); !ok {
+			log.Println("App trying to create user, but is not AuthenticatedDataApp")
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		var dat []byte
 		dat, err = io.ReadAll(req.Body)
 		if err != nil {
@@ -192,7 +197,14 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			return
 		}
 		ret.ID = newUser.ID
-		//TODO: generate jwt token
+		var token []byte
+		token, err = createToken(app.(AuthenticatedDataApp), newUser.ID)
+		if err != nil {
+			log.Println("Err while creating token:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ret.Token = string(token)
 		err = retMarshallable(ret, writer)
 		if err != nil {
 			log.Println("Err while inserting new user:", err)
@@ -207,6 +219,11 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 		if req.Method != http.MethodPost {
 			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if _, ok := app.(AuthenticatedDataApp); !ok {
+			log.Println("App trying to authenticate user, but is not AuthenticatedDataApp")
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		var dat []byte
@@ -246,23 +263,95 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		//TODO: timeout.
+		if user.Failed > 2 {
+			if user.LastTimeout == 0 {
+				_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "lastTimeout", Value: time.Now().Unix()}}}})
+				if err != nil {
+					log.Println("Err while updating lastTimout:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				ret.Timeout = 3 ^ ((user.Failed / 3) - 1)
+				err = retMarshallable(ret, writer)
+				if err != nil {
+					log.Println("Err while authenticating user:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+				}
+				return
+			}
+			var timeoutTime time.Time
+			if user.Failed > 18 {
+				timeoutTime = time.Unix(int64(user.LastTimeout), 0).Add(time.Duration(3^5) * time.Second)
+			} else {
+				timeoutTime = time.Unix(int64(user.LastTimeout), 0).Add(time.Duration(3^((user.Failed/3)-1)) * time.Second)
+			}
+			if timeoutTime.After(time.Now()) {
+				ret.Timeout = int(time.Until(timeoutTime).Seconds())
+				err = retMarshallable(ret, writer)
+				if err != nil {
+					log.Println("Err while authenticating user:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+				}
+				return
+			}
+		}
 		body.Password = string(argon2.IDKey([]byte(body.Password), []byte(user.Salt), 1, 64*1024, 4, 32))
 		if base64.RawStdEncoding.EncodeToString([]byte(body.Password)) != user.Password {
-			//TODO: increment failed
+			user.Failed++
+			if user.Failed%3 == 0 {
+				_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "failed", Value: user.Failed}, {Key: "lastTimeout", Value: time.Now().Unix()}}}})
+				if err != nil {
+					log.Println("Err while updating failed:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				if user.Failed > 18 {
+					ret.Timeout = 3 ^ 5
+				} else {
+					ret.Timeout = 3 ^ ((user.Failed / 3) - 1)
+				}
+			} else {
+				_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$inc", Value: bson.D{{Key: "failed", Value: 1}}}})
+				if err != nil {
+					log.Println("Err while updating failed:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+			}
+			err = retMarshallable(ret, writer)
+			if err != nil {
+				log.Println("Err while authenticating user:", err)
+				writer.WriteHeader(http.StatusInternalServerError)
+			}
 			return
 		}
 		ret.ID = user.ID
-		//TODO: Generate jwt token
+		var token []byte
+		token, err = createToken(app.(AuthenticatedDataApp), user.ID)
+		if err != nil {
+			log.Println("Err while creating token:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ret.Token = string(token)
+		err = retMarshallable(ret, writer)
+		if err != nil {
+			log.Println("Err while authenticating user:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
 	}
-	//TODO: If token is present, authenticate
+	var uuid string
+	if authApp, ok := app.(AuthenticatedDataApp); ok && query.Has("token") {
+		uuid = verifyToken(authApp, query.Get("token"))
+	}
 	if b.extension != nil {
 		req := Request{
 			ReqBody:     req.Body,
 			Query:       query,
 			KeyFeatures: key.Features,
 			Path:        path,
-			//TODO: add UserID if authenticated.
+			UserID:      uuid,
 		}
 		var bod []byte
 		bod, err = b.extension.HandleRequest(req)

@@ -1,6 +1,7 @@
 package stupid
 
 import (
+	"crypto/ed25519"
 	"io"
 	"net/url"
 
@@ -29,6 +30,13 @@ type App interface {
 type DataApp interface {
 	App
 	DataRequest(req Request) (body []byte, err error) // If err is set to a stupid error type, it will set the header to the coresponding code. Otherwise if err is non null, it will be logged and internal error will be sent.
+}
+
+// A DataApp that allows for authenticated requests. Given keys are used to authenticate JWT tokens when making data requests.
+type AuthenticatedDataApp interface {
+	DataApp
+	PublicJWTKey() ed25519.PublicKey
+	PrivateJWTKey() ed25519.PrivateKey
 }
 
 // An optional extension on stupid.Backend to handle new requests.
