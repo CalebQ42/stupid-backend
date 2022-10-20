@@ -1,8 +1,24 @@
 package stupid
 
-import "errors"
-
-var (
-	ErrBadRequest   = errors.New("bad request")  //Sets return header to http.ErrBadRequest
-	ErrUnauthorized = errors.New("unauthorized") //Sets return header to http.ErrUnauthorized
+import (
+	"net/http"
 )
+
+type StupidError struct {
+	code int
+}
+
+func NewStupidError(statusCode int) StupidError {
+	return StupidError{code: statusCode}
+}
+
+func (s StupidError) Error() string {
+	switch s.code {
+	case http.StatusBadRequest:
+		return "bad request"
+	case http.StatusUnauthorized:
+		return "unauthorized"
+	default:
+		return "unknown"
+	}
+}

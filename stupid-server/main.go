@@ -24,7 +24,8 @@ func help() {
 func main() {
 	appList := flag.String("apps", "testing", "Comma deliniated list of apps to use. If API Keys are not already created, new keys are created.")
 	addr := flag.String("addr", ":4223", "Address to open the server on.")
-	keysDir := flag.String("tlsdir", "", "Directory with key.pem and cert.pem. Defaults to $HOME. Required.")
+	keysDir := flag.String("tlsdir", "", "Directory with key.pem and cert.pem. Defaults to $PWD. Required.")
+	//TODO: Add JWT key flag
 	flag.Usage = help
 	flag.Parse()
 	args := flag.Args()
@@ -38,7 +39,7 @@ func main() {
 	}
 	var err error
 	if *keysDir == "" {
-		*keysDir, err = os.UserHomeDir()
+		*keysDir, err = os.Getwd()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -55,6 +56,7 @@ func main() {
 	}
 	backend := stupid.NewBackend(client)
 	for i := range appIDs {
+		//TODO: Move to DefaultDataApp if jwt keys are given.
 		err = backend.AddApps(stupid.NewDefaultApp(appIDs[i], client))
 		if err != nil {
 			fmt.Println(err)
@@ -62,7 +64,6 @@ func main() {
 		}
 	}
 	backend.Init()
-
 	for i := range appIDs {
 		var res *mongo.Cursor
 		res, err = backend.ApiKeys.Find(context.TODO(), bson.D{{Key: "appID", Value: appIDs[i]}})

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -102,6 +104,99 @@ func (b Backend) GetAPIKey(key string) (out *ApiKey, err error) {
 	out = new(ApiKey)
 	err = res.Decode(out)
 	return
+}
+
+func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	if req.Body != nil {
+		defer req.Body.Close()
+	}
+	query := req.URL.Query()
+	if !query.Has("key") {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	path := req.URL.Path
+	key, err := b.GetAPIKey(query.Get("key"))
+	if err == mongo.ErrNoDocuments {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		log.Println("Err while validating api key:", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if path == "/features" {
+		err = retMarshallable(key, writer)
+		if err != nil {
+			log.Println("Err while sending API key:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	app, ok := b.apps[key.AppID]
+	if !ok {
+		log.Println("API Key used for an app that's not set up, but API Key exists:", key.AppID)
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	r := &Request{
+		ReqBody:     req.Body,
+		Method:      req.Method,
+		Query:       query,
+		KeyFeatures: key.Features,
+		Path:        path,
+	}
+	if authApp, ok := app.(AuthenticatedDataApp); ok && query.Has("token") {
+		r.UserID = verifyToken(authApp, query.Get("token"))
+	}
+	if dataApp, ok := app.(DataApp); ok && strings.HasPrefix(path, "/data") {
+		var body []byte
+		body, err = dataApp.DataRequest(r)
+		if stupidErr, ok := err.(StupidError); ok {
+			writer.WriteHeader(stupidErr.code)
+			return
+		} else if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = writer.Write(body)
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	switch path {
+	case "/log":
+		handleLog(writer, app, r)
+	case "/crash":
+		handleCrash(writer, app, r)
+	case "/createUser":
+		b.createUser(writer, app, r)
+	case "/auth":
+		b.authUser(writer, app, r)
+	default:
+		if b.extension != nil {
+			var bod []byte
+			bod, err = b.extension.HandleRequest(r)
+			if stupidErr, ok := err.(StupidError); ok {
+				writer.WriteHeader(stupidErr.code)
+				return
+			} else if err != nil {
+				log.Println(err)
+				writer.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			_, err = writer.Write(bod)
+			if err != nil {
+				log.Println(err)
+				writer.WriteHeader(http.StatusInternalServerError)
+			}
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
 }
 
 func (b Backend) clean(id string) (err error) {
