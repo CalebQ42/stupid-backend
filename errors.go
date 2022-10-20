@@ -8,6 +8,7 @@ type StupidError struct {
 	code int
 }
 
+// Create a new StupidError wrapping the given http status code.
 func NewStupidError(statusCode int) StupidError {
 	return StupidError{code: statusCode}
 }
