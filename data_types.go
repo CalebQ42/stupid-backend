@@ -8,7 +8,8 @@ type ApiKey struct {
 	Death    int             `bson:"death" json:"death"`
 }
 
-type RegUser struct {
+// A registered user
+type User struct {
 	ID          string `bson:"_id" json:"_id"`
 	Username    string `bson:"username" json:"username"`
 	Password    string `bson:"password" json:"password"`
@@ -18,12 +19,14 @@ type RegUser struct {
 	LastTimeout int    `bson:"lastTimeout" json:"lastTimeout"`
 }
 
+// Connection log
 type ConLog struct {
 	ID       string `bson:"_id" json:"_id"`
 	Platform string `bson:"plat" json:"plat"`
 	LastConn string `bson:"lastConn" json:"lastConn"`
 }
 
+// Individual crash report
 type IndCrash struct {
 	ID       string `bson:"_id" json:"_id"`
 	Err      string `bson:"err" json:"err"`
@@ -31,6 +34,7 @@ type IndCrash struct {
 	Stack    string `bson:"stack" json:"stack"`
 }
 
+// Grouped crash report
 type GroupCrash struct {
 	ID        string     `bson:"_id" json:"_id"`
 	Err       string     `bson:"err" json:"err"`

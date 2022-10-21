@@ -147,7 +147,7 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	newUser := RegUser{
+	newUser := User{
 		ID:       uuid.NewString(),
 		Username: body.Username,
 		Password: base64.RawStdEncoding.EncodeToString(argon2.IDKey([]byte(body.Password), salt, 1, 64*1024, 4, 32)),
@@ -218,7 +218,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	var user RegUser
+	var user User
 	err = res.Decode(&user)
 	if err != nil {
 		log.Println("Err while decoding registered user:", err)

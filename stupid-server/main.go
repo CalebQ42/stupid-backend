@@ -123,7 +123,6 @@ func main() {
 		backend.AddUsers(client.Database("stupid-backend").Collection("users"), pu, pr)
 	}
 	for i := range appIDs {
-		//TODO: Move to DefaultDataApp.
 		err = backend.AddApps(stupid.NewDefaultDataApp(appIDs[i], client))
 		if err != nil {
 			fmt.Println(err)

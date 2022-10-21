@@ -61,7 +61,6 @@ func NewDefaultDataApp(appID string, client *mongo.Client) *DefaultDataApp {
 	}
 }
 
-// Request data
 func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 	req := strings.TrimPrefix(r.Path, "/data/")
 	if req == "list" {
@@ -134,7 +133,7 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 	return nil, NewStupidError(http.StatusBadRequest)
 }
 
-// Used when asking for DefaultDataApp list or hint request.
+// Used when asking for DefaultDataApp list.
 type DataID struct {
 	ID   string `bson:"_id" json:"_id"`
 	Hint string `bson:"hint" json:"hint"`
