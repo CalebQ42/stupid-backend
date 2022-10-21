@@ -306,6 +306,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Key"
         - $ref: "#/components/parameters/Token"
+        - name: uuid
+          description: The data's UUID. You can use /data/list to get data list.
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Returns the requested data.
