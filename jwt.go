@@ -6,8 +6,8 @@ import (
 	"github.com/pascaldekloe/jwt"
 )
 
-func verifyToken(app AuthenticatedDataApp, token string) (uuid string) {
-	claim, err := jwt.EdDSACheck([]byte(token), app.PublicJWTKey())
+func (b Backend) verifyToken(token string) (uuid string) {
+	claim, err := jwt.EdDSACheck([]byte(token), b.pubKey)
 	if err != nil {
 		return
 	}
@@ -21,9 +21,9 @@ func verifyToken(app AuthenticatedDataApp, token string) (uuid string) {
 	return
 }
 
-func createToken(app AuthenticatedDataApp, uuid string) (token []byte, err error) {
+func (b Backend) createToken(uuid string) (token []byte, err error) {
 	var claim jwt.Claims
 	claim.Subject = uuid
 	claim.Issued = jwt.NewNumericTime(time.Now().Round(time.Second))
-	return claim.EdDSASign(app.PrivateJWTKey())
+	return claim.EdDSASign(b.privKey)
 }

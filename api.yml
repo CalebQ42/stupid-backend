@@ -31,6 +31,8 @@ components:
             log: true
             registeredUsers: true
             sendCrash: true
+            appData: true
+            userData: true
             backend: false
     Create User Request:
       type: object
@@ -171,30 +173,18 @@ components:
         hint:
           type: string
           description: A hint about the data content.
-    DataResp:
-      type: object
-      description: Response from a data request. Only the fields requested will be populated.
-      properties:
-        ids:
-          description: Only populated when doing a list data request.
-          nullable: true
-          type: array
-          items:
-            $ref: "#/components/schemas/DataIDs"
-        data:
-          $ref: "#/components/schemas/Data" #Only present if given a data UUID.
-        allData:
-          description: Populated when doing an allData data request.
-          nullable: true
-          type: array
-          items:
-            $ref: "#/components/schemas/Data"
   parameters:
     Key:
       name: key
       description: API Key used
       in: query
       required: true
+      schema:
+        type: string
+    Token:
+      name: token
+      description: JWT token for authenticated data requests. If present, only returns results that the user owns. If not present, returns application data.
+      in: query
       schema:
         type: string
 paths:
@@ -286,23 +276,14 @@ paths:
                 $ref: "#/components/schemas/AuthResp"
         '401':
           description: API Key is invalid or doesn't have permission.
-  /data:
+  /data/list:
     description: Data request for DefaultDataApp.
     get:
       parameters:
         - $ref: "#/components/parameters/Key"
-        - name: token
-          description: JWT token for authenticated data requests. If present, only returns results that the user owns.
-          in: query
-          schema:
-            type: string
-        - name: req
-          description: What you want to get from the request. req or uuid MUST be present. list - get UUIDs of available data along with hints. allData - get all available data.
-          in: query
-          schema:
-            type: string
-        - name: uuid
-          description: Which data to retrieve. req or uuid MUST be present.
+        - $ref: "#/components/parameters/Token"
+        - name: hint
+          description: Optionally given to only return data with this hint.
           in: query
           schema:
             type: string
@@ -312,10 +293,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DataResp"
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataIDs"
         '204':
-          description: req or uuid returned no results.
-        '400':
-          description: Both req and uuid are present, or neither are present.
+          description: Returned no results.
+        '401':
+          description: API Key is invalid or doesn't have permission.
+  /data/{uuid}:
+    description: Data request for DefaultDataApp.
+    get:
+      parameters:
+        - $ref: "#/components/parameters/Key"
+        - $ref: "#/components/parameters/Token"
+      responses:
+        '200':
+          description: Returns the requested data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Data"
+        '204':
+          description: No data with UUID.
         '401':
           description: API Key is invalid or doesn't have permission.

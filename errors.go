@@ -19,6 +19,8 @@ func (s StupidError) Error() string {
 		return "bad request"
 	case http.StatusUnauthorized:
 		return "unauthorized"
+	case http.StatusNoContent:
+		return "no content"
 	default:
 		return "unknown"
 	}

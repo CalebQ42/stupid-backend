@@ -82,6 +82,7 @@ Fields required for DefaultDataApp and can also be a suggestion for DataApp's.
 {
     "_id": "uuid",
     "owner": "registered user's uuid",
+    "hint": "hint as to contents"
     // Further fields containing all the actual data.
 }
 ```

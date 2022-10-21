@@ -2,6 +2,7 @@ package stupid
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"log"
 	"net/http"
@@ -13,26 +14,47 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Actual Stupid-Backend. Implements http.Handler.
 type Backend struct {
-	client    *mongo.Client
-	ApiKeys   *mongo.Collection
-	Users     *mongo.Collection
 	extension BackendExtension
+	apiKeys   *mongo.Collection
+	users     *mongo.Collection
 	apps      map[string]App
+	pubKey    ed25519.PublicKey
+	privKey   ed25519.PrivateKey
 	running   bool
 }
 
-func NewBackend(client *mongo.Client) *Backend {
+// Creates a new Backend and sets they ApiKey collection to stupid-backend/keys.
+func NewBackendFromClient(client *mongo.Client) *Backend {
 	return &Backend{
-		client: client,
-		apps:   make(map[string]App),
+		apiKeys: client.Database("stupid-backend").Collection("keys"),
+		apps:    make(map[string]App),
 	}
 }
 
+// Creates a new Backend using the given collections for ApiKeys.
+func NewBackend(apiKeys *mongo.Collection) *Backend {
+	return &Backend{
+		apiKeys: apiKeys,
+		apps:    make(map[string]App),
+	}
+}
+
+// Add the ability to authenticate users. Suggested collection to use: stupid-backend/users.
+func (b *Backend) AddUsers(users *mongo.Collection, pub ed25519.PublicKey, priv ed25519.PrivateKey) {
+	b.users = users
+	b.pubKey = pub
+	b.privKey = priv
+}
+
+// Adds a BackendExtension to further extend functionality.
 func (b *Backend) SetExtention(e BackendExtension) {
 	b.extension = e
 }
 
+// Adds the given stupid.App to the backend.
+// If the app uses
 func (b *Backend) AddApps(app ...App) error {
 	for i := range app {
 		_, exist := b.apps[app[i].ID()]
@@ -49,12 +71,14 @@ func (b *Backend) AddApps(app ...App) error {
 	return nil
 }
 
-func (b *Backend) Init() {
-	if b.ApiKeys == nil {
-		b.ApiKeys = b.client.Database("stupid-backend").Collection("keys")
-	}
-	if b.Users == nil {
-		b.Users = b.client.Database("stupid-backend").Collection("regUsers")
+// Initialize individual apps and starts cleanup of the logs.
+// Logs are cleaned every 24 hours.
+func (b *Backend) Init() error {
+	for _, app := range b.apps {
+		err := app.Initialize()
+		if err != nil {
+			return err
+		}
 	}
 	cleanTicker := time.NewTicker(time.Hour * 24)
 	go func() {
@@ -66,16 +90,19 @@ func (b *Backend) Init() {
 			<-cleanTicker.C
 		}
 	}()
+	return nil
 }
 
-// Creates an API Key for the given app with the given features. If features is nil, creates a key with log, registeredUsers, and sendCrash as true.
-// If features is missing one of the core features (see DB.md), that feature is set to false.
+// Creates an API Key for the given app with the given features. If features is nil, creates a key with log, sendCrash, appData, and userData as true, with registeredUsers set to true if user collection has been populated.
+// If features is missing one of the core features (see DB.md not including data features), that feature is set to false.
 func (b Backend) GenerateAPIKey(appID string, features map[string]bool, alias string) error {
 	if features == nil {
 		features = map[string]bool{
 			"log":             true,
-			"registeredUsers": true,
+			"registeredUsers": b.users != nil,
 			"sendCrash":       true,
+			"appData":         true,
+			"userData":        true,
 			"backend":         false,
 		}
 	}
@@ -92,12 +119,12 @@ func (b Backend) GenerateAPIKey(appID string, features map[string]bool, alias st
 		Death:    -1,
 		Features: features,
 	}
-	_, err := b.ApiKeys.InsertOne(context.TODO(), api)
+	_, err := b.apiKeys.InsertOne(context.TODO(), api)
 	return err
 }
 
 func (b Backend) GetAPIKey(key string) (out *ApiKey, err error) {
-	res := b.ApiKeys.FindOne(context.TODO(), bson.D{{Key: "_id", Value: key}})
+	res := b.apiKeys.FindOne(context.TODO(), bson.D{{Key: "_id", Value: key}})
 	if res.Err() != nil {
 		return nil, res.Err()
 	}
@@ -146,8 +173,8 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		KeyFeatures: key.Features,
 		Path:        path,
 	}
-	if authApp, ok := app.(AuthenticatedDataApp); ok && query.Has("token") {
-		r.UserID = verifyToken(authApp, query.Get("token"))
+	if b.users != nil && query.Has("token") {
+		r.UserID = b.verifyToken(query.Get("token"))
 	}
 	if dataApp, ok := app.(DataApp); ok && strings.HasPrefix(path, "/data") {
 		var body []byte

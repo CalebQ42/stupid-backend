@@ -94,13 +94,12 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if r.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusBadRequest)
+	if b.users == nil {
+		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if _, ok := app.(AuthenticatedDataApp); !ok {
-		log.Println("App trying to create user, but is not AuthenticatedDataApp")
-		writer.WriteHeader(http.StatusUnauthorized)
+	if r.Method != http.MethodPost {
+		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	dat, err := io.ReadAll(r.ReqBody)
@@ -120,7 +119,7 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 		return
 	}
 	var ret CreateReturn
-	res := b.Users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
+	res := b.users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
 	if res.Err() == nil {
 		ret.Problem = "username"
 		err = retMarshallable(ret, writer)
@@ -155,7 +154,7 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 		Salt:     base64.RawStdEncoding.EncodeToString(salt),
 		Email:    body.Email,
 	}
-	_, err = b.Users.InsertOne(context.TODO(), newUser)
+	_, err = b.users.InsertOne(context.TODO(), newUser)
 	if err != nil {
 		log.Println("Err while inserting new user:", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -163,7 +162,7 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 	}
 	ret.ID = newUser.ID
 	var token []byte
-	token, err = createToken(app.(AuthenticatedDataApp), newUser.ID)
+	token, err = b.createToken(newUser.ID)
 	if err != nil {
 		log.Println("Err while creating token:", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -182,13 +181,12 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if r.Method != http.MethodPost {
-		writer.WriteHeader(http.StatusBadRequest)
+	if b.users == nil {
+		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if _, ok := app.(AuthenticatedDataApp); !ok {
-		log.Println("App trying to authenticate user, but is not AuthenticatedDataApp")
-		writer.WriteHeader(http.StatusUnauthorized)
+	if r.Method != http.MethodPost {
+		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	dat, err := io.ReadAll(r.ReqBody)
@@ -208,7 +206,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 		return
 	}
 	var ret AuthReturn
-	res := b.Users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
+	res := b.users.FindOne(context.TODO(), bson.D{{Key: "username", Value: body.Username}})
 	if res.Err() == mongo.ErrNoDocuments {
 		err = retMarshallable(ret, writer)
 		if err != nil {
@@ -229,7 +227,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 	}
 	if user.Failed > 2 {
 		if user.LastTimeout == 0 {
-			_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "lastTimeout", Value: time.Now().Unix()}}}})
+			_, err = b.users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "lastTimeout", Value: time.Now().Unix()}}}})
 			if err != nil {
 				log.Println("Err while updating lastTimout:", err)
 				writer.WriteHeader(http.StatusInternalServerError)
@@ -263,7 +261,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 	if base64.RawStdEncoding.EncodeToString([]byte(body.Password)) != user.Password {
 		user.Failed++
 		if user.Failed%3 == 0 {
-			_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "failed", Value: user.Failed}, {Key: "lastTimeout", Value: time.Now().Unix()}}}})
+			_, err = b.users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$set", Value: bson.D{{Key: "failed", Value: user.Failed}, {Key: "lastTimeout", Value: time.Now().Unix()}}}})
 			if err != nil {
 				log.Println("Err while updating failed:", err)
 				writer.WriteHeader(http.StatusInternalServerError)
@@ -275,7 +273,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 				ret.Timeout = 3 ^ ((user.Failed / 3) - 1)
 			}
 		} else {
-			_, err = b.Users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$inc", Value: bson.D{{Key: "failed", Value: 1}}}})
+			_, err = b.users.UpdateByID(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, bson.D{{Key: "$inc", Value: bson.D{{Key: "failed", Value: 1}}}})
 			if err != nil {
 				log.Println("Err while updating failed:", err)
 				writer.WriteHeader(http.StatusInternalServerError)
@@ -291,7 +289,7 @@ func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {
 	}
 	ret.ID = user.ID
 	var token []byte
-	token, err = createToken(app.(AuthenticatedDataApp), user.ID)
+	token, err = b.createToken(user.ID)
 	if err != nil {
 		log.Println("Err while creating token:", err)
 		writer.WriteHeader(http.StatusInternalServerError)
