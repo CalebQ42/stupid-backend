@@ -31,9 +31,9 @@ See [OpenAPI document](api.yml).
 
 ## Future Plans
 
-These are just musings on what I could potentially do in the future (after the planned features above are complete). Mainly here so I don't forget.
+These are just musings on what I could potentially do in the future (after the planned features above are complete). Mainly here so I don't forget. Might or might not be implemented or completely adbandoned.
 
--
+- Allow logins via 3rd parties (such as Google login)
 - Change things around so `stupid.App`s don't have to use MongoDB
   - Possible change the actual backend so it doesn't require MongoDB either.
   - Probably would have to change current implementation to `MongoApp` or something similiar.
