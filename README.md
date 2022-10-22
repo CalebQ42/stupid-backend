@@ -15,6 +15,12 @@ This is a project to make a very simple and highly extendable application backen
 - Add an extention to extend features
 - Allow multiple apps to use the same backend.
 
+## TODO
+
+- [ ] Test all functions (Really should have done this before v0.1.0, but oh well).
+- [ ] Create proper tests for said functions.
+- [ ] Delete data in DefaultDataApp
+
 ## Data structure
 
 See [DB.md](DB.md).
@@ -27,8 +33,10 @@ See [OpenAPI document](api.yml).
 
 These are just musings on what I could potentially do in the future (after the planned features above are complete). Mainly here so I don't forget.
 
-- Change things around so stupid.Apps don't have to use MongoDB
+-
+- Change things around so `stupid.App`s don't have to use MongoDB
   - Possible change the actual backend so it doesn't require MongoDB either.
+  - Probably would have to change current implementation to `MongoApp` or something similiar.
 - Add abilities for backend access without having to look at the DB.
   - Probably build a Flutter app for easy access (and can be deployed as a web app).
 - Build a Flutter package for easy integration.
