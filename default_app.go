@@ -3,6 +3,7 @@ package stupid
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -62,6 +63,36 @@ func NewDefaultDataApp(appID string, client *mongo.Client) *DefaultDataApp {
 }
 
 func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
+	if r.Path == "/data" {
+		if r.UserID == "" {
+			return nil, NewStupidError(http.StatusUnauthorized)
+		}
+		var jsonMap map[string]any
+		var dat []byte
+		dat, err = io.ReadAll(r.ReqBody)
+		if err != nil{
+			return
+		}
+		err = json.Unmarshal(dat, &jsonMap)
+		if err != nil {
+			return
+		}
+		if _, ok := jsonMap["_id"]; !ok {
+			return nil, NewStupidError(http.StatusBadRequest)
+		}
+		if _, ok := jsonMap["hint"]; !ok {
+			return nil, NewStupidError(http.StatusBadRequest)
+		}
+		jsonMap["owner"] = r.UserID
+		res := d.data.FindOneAndReplace(context.TODO(), bson.D{{Key: "_id", Value: jsonMap["_id"]}}, jsonMap)
+		if res.Err() == mongo.ErrNoDocuments {
+			_, err = d.data.InsertOne(context.TODO(), jsonMap)
+			if err != nil {
+				return
+			}
+		}
+		return nil, NewStupidError(http.StatusCreated)
+	}
 	req := strings.TrimPrefix(r.Path, "/data/")
 	if req == "list" {
 		if r.UserID == "" {

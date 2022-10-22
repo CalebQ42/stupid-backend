@@ -65,7 +65,10 @@ func (b *Backend) AddApps(app ...App) error {
 	}
 	if b.running {
 		for i := range app {
-			b.clean(app[i].ID())
+			err := b.clean(app[i].ID())
+			if err != nil {
+				log.Println("Err while cleaning", i, ":", err)
+			}
 		}
 	}
 	return nil

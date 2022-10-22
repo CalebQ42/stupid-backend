@@ -173,7 +173,9 @@ func (b Backend) createUser(writer http.ResponseWriter, app App, r *Request) {
 	if err != nil {
 		log.Println("Err while inserting new user:", err)
 		writer.WriteHeader(http.StatusInternalServerError)
+		return
 	}
+	writer.WriteHeader(http.StatusCreated)
 }
 
 func (b Backend) authUser(writer http.ResponseWriter, app App, r *Request) {

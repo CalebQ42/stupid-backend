@@ -249,7 +249,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Key"
       responses:
-        '200':
+        '201':
           description: Successfully created user.
           content:
             application/json:
@@ -276,6 +276,25 @@ paths:
                 $ref: "#/components/schemas/AuthResp"
         '401':
           description: API Key is invalid or doesn't have permission.
+  # All /data specs are only for DefaultDataApp.
+  /data:
+    description: Upload data. Only allows for user data to be uploaded. If the data's UUID already exists, the old data will be overwritten.
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Data"
+      parameters:
+        - $ref: "#/components/parameters/Key"
+        - $ref: "#/components/parameters/Token" #Required
+      responses:
+        '201':
+          description: Successfully uploaded
+        '400':
+          description: The data is missing the required fields (_id and hint. Owner will be added automatically)
+        '401':
+          description: API Key is invalid or doesn't have permission. Token is missing or invalid.
   /data/list:
     description: Data request for DefaultDataApp.
     get:
