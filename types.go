@@ -25,14 +25,9 @@ type App interface {
 	Initialize() error
 }
 
-// An app that additionally can handle data requests (urls that start with /data).
-// DataRequest is only called if the API Key used in the request is valid and if the token provided is valid (if one is provided).
-type DataApp interface {
+// An app that additionally can handle additional paths, like getting data.
+// Additional path can't overwrite default paths. See api.yml for reserved paths (minus /data).
+type ExtendedApp interface {
 	App
-	DataRequest(req *Request) (body []byte, err error) // If err is set to a StupidError, it will set the header to the coresponding code. Otherwise if err is non null, it will be logged and internal error will be sent.
-}
-
-// An optional extension on stupid.Backend to handle new requests.
-type BackendExtension interface {
-	HandleRequest(request *Request) (body []byte, err error) // If err is set to a StupidError, it will set the header to the coresponding code. Otherwise if err is non null, it will be logged and internal error will be sent.
+	Extention(req *Request) (body []byte, err error) // If err is set to a StupidError, it will set the header to the coresponding code. Otherwise if err is non null, it will be logged and internal error will be sent. Please return NewStupidError(http.StatusBadRequest) if path is not handled.
 }

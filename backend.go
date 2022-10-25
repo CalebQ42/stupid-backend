@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,13 +16,12 @@ import (
 
 // Actual Stupid-Backend. Implements http.Handler.
 type Backend struct {
-	extension BackendExtension
-	apiKeys   *mongo.Collection
-	users     *mongo.Collection
-	apps      map[string]App
-	pubKey    ed25519.PublicKey
-	privKey   ed25519.PrivateKey
-	running   bool
+	apiKeys *mongo.Collection
+	users   *mongo.Collection
+	apps    map[string]App
+	pubKey  ed25519.PublicKey
+	privKey ed25519.PrivateKey
+	running bool
 }
 
 // Creates a new Backend and sets they ApiKey collection to stupid-backend/keys.
@@ -47,11 +45,6 @@ func (b *Backend) AddUsers(users *mongo.Collection, pub ed25519.PublicKey, priv 
 	b.users = users
 	b.pubKey = pub
 	b.privKey = priv
-}
-
-// Adds a BackendExtension to further extend functionality.
-func (b *Backend) SetExtention(e BackendExtension) {
-	b.extension = e
 }
 
 // Adds the given stupid.App to the backend.
@@ -199,24 +192,6 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if dataApp, ok := app.(DataApp); ok && strings.HasPrefix(path, "/data") {
-		var body []byte
-		body, err = dataApp.DataRequest(r)
-		if stupidErr, ok := err.(StupidError); ok {
-			writer.WriteHeader(stupidErr.code)
-			return
-		} else if err != nil {
-			log.Println(err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		_, err = writer.Write(body)
-		if err != nil {
-			log.Println(err)
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
 	switch path {
 	case "/log":
 		handleLog(writer, app, r)
@@ -227,9 +202,9 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	case "/auth":
 		b.authUser(writer, app, r)
 	default:
-		if b.extension != nil {
-			var bod []byte
-			bod, err = b.extension.HandleRequest(r)
+		if ext, ok := app.(ExtendedApp); ok {
+			var body []byte
+			body, err = ext.Extention(r)
 			if stupidErr, ok := err.(StupidError); ok {
 				writer.WriteHeader(stupidErr.code)
 				return
@@ -238,11 +213,12 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			_, err = writer.Write(bod)
+			_, err = writer.Write(body)
 			if err != nil {
 				log.Println(err)
 				writer.WriteHeader(http.StatusInternalServerError)
 			}
+			return
 		} else {
 			writer.WriteHeader(http.StatusBadRequest)
 		}

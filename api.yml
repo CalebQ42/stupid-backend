@@ -277,24 +277,6 @@ paths:
         '401':
           description: API Key is invalid or doesn't have permission.
   # All /data specs are only for DefaultDataApp.
-  /data:
-    description: Upload data. Only allows for user data to be uploaded. If the data's UUID already exists, the old data will be overwritten.
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Data"
-      parameters:
-        - $ref: "#/components/parameters/Key"
-        - $ref: "#/components/parameters/Token" #Required
-      responses:
-        '201':
-          description: Successfully uploaded
-        '400':
-          description: The data is missing the required fields (_id and hint. Owner will be added automatically)
-        '401':
-          description: API Key is invalid or doesn't have permission. Token is missing or invalid.
   /data/list:
     description: Data request for DefaultDataApp.
     get:
@@ -321,6 +303,37 @@ paths:
           description: API Key is invalid or doesn't have permission.
   /data/{uuid}:
     description: Data request for DefaultDataApp.
+    delete:
+      description: Delete data.
+      parameters:
+        - $ref: "#/components/parameters/Key"
+        - $ref: "#/components/parameters/Token" #Required
+      responses:
+        '200':
+          description: Successfully deleted data
+        '204':
+          description: Invalid UUID
+        '401':
+          description: API Key is invalid or doesn't have permission. Token is missing or invalid.
+    post:
+      description: Upload new data or replace existing data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Data"
+      parameters:
+        - $ref: "#/components/parameters/Key"
+        - $ref: "#/components/parameters/Token" #Required
+      responses:
+        '200':
+          description: Successfully replaced existing data.
+        '201':
+          description: Successfully uploaded new data.
+        '400':
+          description: The data is missing the required fields (_id and hint. Owner will be added automatically)
+        '401':
+          description: API Key is invalid or doesn't have permission. Token is missing or invalid.
     get:
       parameters:
         - $ref: "#/components/parameters/Key"

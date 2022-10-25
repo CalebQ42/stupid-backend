@@ -62,36 +62,11 @@ func NewDefaultDataApp(appID string, client *mongo.Client) *DefaultDataApp {
 	}
 }
 
-func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
+func (d DefaultDataApp) Extention(r *Request) (body []byte, err error) {
 	if r.Path == "/data" {
 		if r.User == nil {
 			return nil, NewStupidError(http.StatusUnauthorized)
 		}
-		var jsonMap map[string]any
-		var dat []byte
-		dat, err = io.ReadAll(r.ReqBody)
-		if err != nil {
-			return
-		}
-		err = json.Unmarshal(dat, &jsonMap)
-		if err != nil {
-			return
-		}
-		if _, ok := jsonMap["_id"]; !ok {
-			return nil, NewStupidError(http.StatusBadRequest)
-		}
-		if _, ok := jsonMap["hint"]; !ok {
-			return nil, NewStupidError(http.StatusBadRequest)
-		}
-		jsonMap["owner"] = r.User.ID
-		res := d.data.FindOneAndReplace(context.TODO(), bson.D{{Key: "_id", Value: jsonMap["_id"]}}, jsonMap)
-		if res.Err() == mongo.ErrNoDocuments {
-			_, err = d.data.InsertOne(context.TODO(), jsonMap)
-			if err != nil {
-				return
-			}
-		}
-		return nil, NewStupidError(http.StatusCreated)
 	}
 	req := strings.TrimPrefix(r.Path, "/data/")
 	if req == "list" {
@@ -123,6 +98,26 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 			if !r.KeyFeatures["userData"] {
 				return nil, NewStupidError(http.StatusUnauthorized)
 			}
+			var cur *mongo.Cursor
+			if r.Query.Has("hint") {
+				cur, err = d.data.Find(context.TODO(), bson.D{{Key: "hint", Value: r.Query.Get("hint")}, {Key: "owner", Value: r.User.ID}}, options.Find().SetProjection(bson.D{{Key: "hint", Value: "1"}}))
+			} else {
+				cur, err = d.data.Find(context.TODO(), bson.D{{Key: "owner", Value: r.User.ID}}, options.Find().SetProjection(bson.D{{Key: "hint", Value: "1"}}))
+			}
+			if err != nil {
+				log.Println("Err while listing data")
+				return
+			}
+			if cur.Err() == mongo.ErrNoDocuments {
+				return nil, NewStupidError(http.StatusNoContent)
+			}
+			var out []DataID
+			err = cur.All(context.TODO(), &out)
+			if err != nil {
+				return
+			}
+			body, err = json.Marshal(out)
+			return
 		}
 	} else if len(req) > 0 {
 		if r.User == nil {
@@ -146,19 +141,55 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 			if !r.KeyFeatures["userData"] {
 				return nil, NewStupidError(http.StatusUnauthorized)
 			}
-			res := d.data.FindOne(context.TODO(), bson.D{{Key: "_id", Value: req}, {Key: "owner", Value: r.User.ID}})
-			if res.Err() == mongo.ErrNoDocuments {
-				return nil, NewStupidError(http.StatusNoContent)
-			} else if res.Err() != nil {
-				return nil, res.Err()
-			}
-			var dat map[string]any
-			err = res.Decode(&dat)
-			if err != nil {
+			if r.Method == http.MethodGet {
+				res := d.data.FindOne(context.TODO(), bson.D{{Key: "_id", Value: req}, {Key: "owner", Value: r.User.ID}})
+				if res.Err() == mongo.ErrNoDocuments {
+					return nil, NewStupidError(http.StatusNoContent)
+				} else if res.Err() != nil {
+					return nil, res.Err()
+				}
+				var dat map[string]any
+				err = res.Decode(&dat)
+				if err != nil {
+					return
+				}
+				body, err = json.Marshal(dat)
+				return
+			} else if r.Method == http.MethodPost {
+				var jsonMap map[string]any
+				var dat []byte
+				dat, err = io.ReadAll(r.ReqBody)
+				if err != nil {
+					return
+				}
+				err = json.Unmarshal(dat, &jsonMap)
+				if err != nil {
+					return
+				}
+				if _, ok := jsonMap["_id"]; !ok {
+					return nil, NewStupidError(http.StatusBadRequest)
+				}
+				if _, ok := jsonMap["hint"]; !ok {
+					return nil, NewStupidError(http.StatusBadRequest)
+				}
+				jsonMap["owner"] = r.User.ID
+				res := d.data.FindOneAndReplace(context.TODO(), bson.D{{Key: "_id", Value: jsonMap["_id"]}}, jsonMap)
+				if res.Err() == mongo.ErrNoDocuments {
+					_, err = d.data.InsertOne(context.TODO(), jsonMap)
+					return
+				}
+				return nil, NewStupidError(http.StatusCreated)
+			} else if r.Method == http.MethodDelete {
+				var res *mongo.DeleteResult
+				res, err = d.data.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: req}})
+				if err != nil {
+					return
+				}
+				if res.DeletedCount == 0 {
+					return nil, NewStupidError(http.StatusNoContent)
+				}
 				return
 			}
-			body, err = json.Marshal(dat)
-			return
 		}
 	}
 	return nil, NewStupidError(http.StatusBadRequest)
