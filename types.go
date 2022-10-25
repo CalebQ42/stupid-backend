@@ -12,9 +12,9 @@ type Request struct {
 	ReqBody     io.ReadCloser   // The request's body. Might be empty or nil. Will be closed at the end of the function, so it might be necessary to copy it's contents if concerency is needed.
 	Query       url.Values      // The request's URL Query.
 	KeyFeatures map[string]bool // The features of the API Key that made the request.
+	User        *RequestUser    // The authenticated user if the request was authenticated with a token. Will be nil if no token was provided.
 	Method      string          // Request's method (POST, GET, etc)
 	Path        string          // Request's URL path.
-	UserID      string          // The UUID of the user if the request was authenticated with a token. Will be an empty if no token was provided.
 }
 
 // A basic app for the backend. ID() is expected to be unique for each application that the backend uses.

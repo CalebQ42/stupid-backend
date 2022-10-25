@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Actual Stupid-Backend. Implements http.Handler.
@@ -177,7 +178,26 @@ func (b Backend) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		Path:        path,
 	}
 	if b.users != nil && query.Has("token") {
-		r.UserID = b.verifyToken(query.Get("token"))
+		userID := b.verifyToken(query.Get("token"))
+		if userID == "" {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		res := b.users.FindOne(context.TODO(), bson.D{{Key: "_id", Value: userID}}, options.FindOne().SetProjection(bson.D{{Key: "username", Value: 1}}))
+		if res.Err() == mongo.ErrNoDocuments {
+			writer.WriteHeader(http.StatusUnauthorized)
+			return
+		} else if res.Err() != nil {
+			log.Println("Err while authenticating token:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		err = res.Decode(&r.User)
+		if err != nil {
+			log.Println("Err while authenticating token:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 	if dataApp, ok := app.(DataApp); ok && strings.HasPrefix(path, "/data") {
 		var body []byte

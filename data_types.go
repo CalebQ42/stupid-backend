@@ -19,6 +19,11 @@ type User struct {
 	LastTimeout int    `bson:"lastTimeout" json:"lastTimeout"`
 }
 
+type RequestUser struct {
+	ID       string `bson:"_id" json:"_id"`
+	Username string `bson:"username" json:"username"`
+}
+
 // Connection log
 type ConLog struct {
 	ID       string `bson:"_id" json:"_id"`
