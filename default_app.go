@@ -64,13 +64,13 @@ func NewDefaultDataApp(appID string, client *mongo.Client) *DefaultDataApp {
 
 func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 	if r.Path == "/data" {
-		if r.UserID == "" {
+		if r.User == nil {
 			return nil, NewStupidError(http.StatusUnauthorized)
 		}
 		var jsonMap map[string]any
 		var dat []byte
 		dat, err = io.ReadAll(r.ReqBody)
-		if err != nil{
+		if err != nil {
 			return
 		}
 		err = json.Unmarshal(dat, &jsonMap)
@@ -83,7 +83,7 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 		if _, ok := jsonMap["hint"]; !ok {
 			return nil, NewStupidError(http.StatusBadRequest)
 		}
-		jsonMap["owner"] = r.UserID
+		jsonMap["owner"] = r.User.ID
 		res := d.data.FindOneAndReplace(context.TODO(), bson.D{{Key: "_id", Value: jsonMap["_id"]}}, jsonMap)
 		if res.Err() == mongo.ErrNoDocuments {
 			_, err = d.data.InsertOne(context.TODO(), jsonMap)
@@ -95,7 +95,7 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 	}
 	req := strings.TrimPrefix(r.Path, "/data/")
 	if req == "list" {
-		if r.UserID == "" {
+		if r.User == nil {
 			if !r.KeyFeatures["appData"] {
 				return nil, NewStupidError(http.StatusUnauthorized)
 			}
@@ -125,7 +125,7 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 			}
 		}
 	} else if len(req) > 0 {
-		if r.UserID == "" {
+		if r.User == nil {
 			if !r.KeyFeatures["appData"] {
 				return nil, NewStupidError(http.StatusUnauthorized)
 			}
@@ -146,7 +146,7 @@ func (d DefaultDataApp) DataRequest(r *Request) (body []byte, err error) {
 			if !r.KeyFeatures["userData"] {
 				return nil, NewStupidError(http.StatusUnauthorized)
 			}
-			res := d.data.FindOne(context.TODO(), bson.D{{Key: "_id", Value: req}, {Key: "owner", Value: r.UserID}})
+			res := d.data.FindOne(context.TODO(), bson.D{{Key: "_id", Value: req}, {Key: "owner", Value: r.User.ID}})
 			if res.Err() == mongo.ErrNoDocuments {
 				return nil, NewStupidError(http.StatusNoContent)
 			} else if res.Err() != nil {
