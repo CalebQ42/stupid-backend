@@ -187,6 +187,13 @@ components:
       in: query
       schema:
         type: string
+    TokenNeeded:
+      name: token
+      description: JWT token for authenticated data requests. If present, only returns results that the user owns. If not present, returns application data.
+      required: true
+      in: query
+      schema:
+        type: string
 paths:
   /features:
     description: Get the details of the API Key, including it's features
@@ -277,7 +284,7 @@ paths:
         '401':
           description: API Key is invalid or doesn't have permission.
   # All /data specs are only for DefaultDataApp.
-  /data/list:
+  /data:
     description: Data request for DefaultDataApp.
     get:
       parameters:
@@ -307,7 +314,13 @@ paths:
       description: Delete data.
       parameters:
         - $ref: "#/components/parameters/Key"
-        - $ref: "#/components/parameters/Token" #Required
+        - $ref: "#/components/parameters/TokenNeeded"
+        - name: uuid
+          description: The data's UUID. You can use /data/list to get data list.
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successfully deleted data
@@ -324,7 +337,13 @@ paths:
               $ref: "#/components/schemas/Data"
       parameters:
         - $ref: "#/components/parameters/Key"
-        - $ref: "#/components/parameters/Token" #Required
+        - $ref: "#/components/parameters/TokenNeeded"
+        - name: uuid
+          description: The data's UUID. You can use /data/list to get data list.
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successfully replaced existing data.
