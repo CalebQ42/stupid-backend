@@ -1,43 +1,41 @@
 # Stupid Backend
 
-This is a project to make a very simple and highly extendable application backend. Uses a RESTful API with MongoDB.
+A purposely simple and "stupid" backend. Primarily created for [SWAssistant](https://github.com/CalebQ42/SWAssistant) with that specific implementation found at [swassistant-backend](https://github.com/CalebQ42/swassistant-backend).
 
-## Features
+## Functions
 
-- Log users
-  - Logs an app's UUID, the date (not time) last connected, and the platform. Records are wiped if inactive for 30 days.
-- Report Crashes
-  - Crashes are grouped together for easy parsing
+- Disable or enable any capabilities based on an API key or server configuration.
+- Log anonymously
+  - Deleted after 30 days. Purely for user count purposes.
 - User accounts
-- Upload and download content
-  - Allows for general application data and user specific data
-  - Provides a basic, generic data system, but can be extended easily
-- Add an extention to extend features
-- Allow multiple apps to use the same backend.
+  - Authentication provided, but specific uses are left up to the implementation.
+- Crash reports
+  - Anonymouse with optional extra data.
+- All of the above, but with multiple apps using the same backend.
+  - Each app will have a seperate App ID.
 
-## TODO
+## Base URLs
 
-- [ ] Test all functions (Really should have done this before v0.1.0, but oh well).
-- [ ] Create proper tests for said functions.
-- [ ] Delete data in DefaultDataApp
+These are the available functions in the core setup. These are meant to be added to in a specific implementation.
 
-## Data structure
+> /log?key={api_key}&id={uuid}&platform={platform}
 
-See [DB.md](DB.md).
+Logs that a user connected to the API. This is purely meant to get a rough amount of active users. Should be opt-in and IDs are removed if they haven't logged within 30 days.
 
-## API
+> /key/{api_key}
 
-See [OpenAPI document](api.yml).
-
-## Future Plans
-
-These are just musings on what I could potentially do in the future (after the planned features above are complete). Mainly here so I don't forget. Might or might not be implemented or completely adbandoned.
-
-- Allow logins via 3rd parties (such as Google login)
-- Change things around so `stupid.App`s don't have to use MongoDB
-  - Possible change the actual backend so it doesn't require MongoDB either.
-  - Probably would have to change current implementation to `MongoApp` or something similiar.
-- Add abilities for backend access without having to look at the DB.
-  - Probably build a Flutter app for easy access (and can be deployed as a web app).
-- Build a Flutter package for easy integration.
-  - Other platforms shouldn't be difficult, I'm just focused on Flutter ATM.
+```json
+{
+  "key": "uuid string",
+  "appID": "myApp",
+  "alias": "Human readable description of the key",
+  "permissions": {
+    "count": true, // Get user count; total user and users per platform
+    "log": true, // Log a user connecting.
+    "userAuth": true, // Authenticate a user account. Includes creating new users.
+    "crash": true, // Send crash reports
+    // Additional permissions should be added by specific implementations.
+  },
+  "death": 0 // Unix timestamp (seconds) of the planned death of the key. Keys can be expired at any time without warning. -1 indicates no intended death time.
+}
+```
