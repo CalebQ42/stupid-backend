@@ -14,14 +14,15 @@ type stupidRequest struct {
 	r         io.ReadCloser
 	w         http.ResponseWriter
 	query     map[string][]string
-	authdUser string
+	authdUser *User
+	method    string
 	apiKey    apiKey
 	path      []string
 }
 
 // Both validates that the api key is present and is valid and
 // populates the apiKey value of stupidRequest (if it is valid).
-func (s *stupidRequest) validKey(keyTable db.DBTable) bool {
+func (s *stupidRequest) validKey(keyTable db.Table) bool {
 	var key string
 	if s.path[0] == "key" {
 		if len(s.path) == 1 {
@@ -50,6 +51,10 @@ func (s *stupidRequest) validKey(keyTable db.DBTable) bool {
 }
 
 func (s *stupidRequest) handleKeyReq() {
+	if s.method != http.MethodGet {
+		s.w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	out, err := json.MarshalIndent(s.apiKey, "", "\t")
 	if err != nil {
 		s.w.WriteHeader(http.StatusInternalServerError)

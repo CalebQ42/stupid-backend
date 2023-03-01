@@ -26,8 +26,13 @@ func main() {
 		panic(fmt.Errorf("can't connect to mongo client: %s", err))
 	}
 	keyTab := db.NewMongoTable(cl.Database("stupid-backend").Collection("keys"))
-	st := &stupid.Stupid{
-		Keys: keyTab,
+	st := stupid.NewStupidBackend(keyTab)
+	st.AppTables = func(id string) db.App {
+		return db.App{
+			Logs:    db.NewMongoTable(cl.Database(id).Collection("log")),
+			Crashes: db.NewMongoTable(cl.Database(id).Collection("crash")),
+		}
 	}
 	http.ListenAndServe(":4223", st)
+	// hello
 }

@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Satisfies both db.Table and db.CrashTable.
 type MongoTable struct {
 	c *mongo.Collection
 }
@@ -47,4 +48,8 @@ func (m MongoTable) Has(key string) (bool, error) {
 		return false, res.Err()
 	}
 	return true, nil
+}
+
+func (m MongoTable) ContainsIndividualCrash(id string) (bool, error) {
+
 }
