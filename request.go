@@ -10,39 +10,39 @@ import (
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
 
-type stupidRequest struct {
-	r         io.ReadCloser
-	w         http.ResponseWriter
-	query     map[string][]string
-	authdUser *User
-	method    string
-	apiKey    apiKey
-	path      []string
+type Request struct {
+	Body   io.ReadCloser
+	Resp   http.ResponseWriter
+	Query  map[string][]string
+	User   *AuthdUser
+	Method string
+	ApiKey apiKey
+	Path   []string
 }
 
 // Both validates that the api key is present and is valid and
 // populates the apiKey value of stupidRequest (if it is valid).
-func (s *stupidRequest) validKey(keyTable db.Table) bool {
+func (s *Request) validKey(keyTable db.Table) bool {
 	var key string
-	if s.path[0] == "key" {
-		if len(s.path) == 1 {
+	if s.Path[0] == "key" {
+		if len(s.Path) == 1 {
 			return false
 		}
-		key = s.path[1]
+		key = s.Path[1]
 	} else {
-		k, ok := s.query["key"]
+		k, ok := s.Query["key"]
 		if !ok || len(k) != 1 {
 			return false
 		}
 		key = k[0]
 	}
-	err := keyTable.Get(key, &s.apiKey)
+	err := keyTable.Get(key, &s.ApiKey)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	if s.apiKey.Death != -1 {
-		deth := time.Unix(s.apiKey.Death, 0)
+	if s.ApiKey.Death != -1 {
+		deth := time.Unix(s.ApiKey.Death, 0)
 		if time.Now().After(deth) {
 			return false
 		}
@@ -50,19 +50,19 @@ func (s *stupidRequest) validKey(keyTable db.Table) bool {
 	return true
 }
 
-func (s *stupidRequest) handleKeyReq() {
-	if s.method != http.MethodGet {
-		s.w.WriteHeader(http.StatusBadRequest)
+func (s *Request) handleKeyReq() {
+	if s.Method != http.MethodGet {
+		s.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	out, err := json.MarshalIndent(s.apiKey, "", "\t")
+	out, err := json.MarshalIndent(s.ApiKey, "", "\t")
 	if err != nil {
-		s.w.WriteHeader(http.StatusInternalServerError)
+		s.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	s.w.Header().Add("content-type", "application/json")
-	_, err = s.w.Write(out)
+	s.Resp.Header().Add("content-type", "application/json")
+	_, err = s.Resp.Write(out)
 	if err != nil {
-		s.w.WriteHeader(http.StatusInternalServerError)
+		s.Resp.WriteHeader(http.StatusInternalServerError)
 	}
 }

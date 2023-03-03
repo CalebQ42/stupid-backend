@@ -34,14 +34,14 @@ func (s *Stupid) SetApps(apps map[string]db.App) {
 }
 
 func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	req := &stupidRequest{
-		r:      r.Body,
-		query:  r.URL.Query(),
-		path:   strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/"),
-		method: r.Method,
-		w:      w,
+	req := &Request{
+		Body:   r.Body,
+		Query:  r.URL.Query(),
+		Path:   strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/"),
+		Method: r.Method,
+		Resp:   w,
 	}
-	if len(req.path) == 0 {
+	if len(req.Path) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -49,22 +49,22 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	switch req.path[0] {
+	switch req.Path[0] {
 	case "key":
-		if req.apiKey.Permissions["key"] {
+		if req.ApiKey.Permissions["key"] {
 			req.handleKeyReq()
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "log":
-		if s.AppTables != nil && req.apiKey.Permissions["log"] {
-			s.logReq(req, s.AppTables(req.apiKey.AppID).Logs)
+		if s.AppTables != nil && req.ApiKey.Permissions["log"] {
+			s.logReq(req, s.AppTables(req.ApiKey.AppID).Logs)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "crash":
-		if s.AppTables != nil && req.apiKey.Permissions["crash"] {
-			s.crashReport(req, s.AppTables(req.apiKey.AppID).Crashes)
+		if s.AppTables != nil && req.ApiKey.Permissions["crash"] {
+			s.crashReport(req, s.AppTables(req.ApiKey.AppID).Crashes)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -73,24 +73,24 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Stupid) logReq(req *stupidRequest, logs db.Table) {
-	if req.method != http.MethodPost {
-		req.w.WriteHeader(http.StatusBadRequest)
+func (s *Stupid) logReq(req *Request, logs db.Table) {
+	if req.Method != http.MethodPost {
+		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id, ok := req.query["id"]
+	id, ok := req.Query["id"]
 	if !ok || len(id) != 1 {
-		req.w.WriteHeader(http.StatusBadRequest)
+		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	plat, ok := req.query["platform"]
+	plat, ok := req.Query["platform"]
 	if !ok || len(plat) != 1 {
-		req.w.WriteHeader(http.StatusBadRequest)
+		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	ok, err := logs.Has(id[0])
 	if err != nil {
-		req.w.WriteHeader(http.StatusInternalServerError)
+		req.Resp.WriteHeader(http.StatusInternalServerError)
 		log.Printf("error while checking if log id is already present: %s", err)
 		return
 	}
@@ -102,38 +102,38 @@ func (s *Stupid) logReq(req *stupidRequest, logs db.Table) {
 	if ok {
 		err = logs.Update(id[0], usr)
 		if err != nil {
-			req.w.WriteHeader(http.StatusInternalServerError)
+			req.Resp.WriteHeader(http.StatusInternalServerError)
 			log.Printf("error while updating log: %s", err)
 			return
 		}
 	} else {
 		_, err = logs.Add(usr)
 		if err != nil {
-			req.w.WriteHeader(http.StatusInternalServerError)
+			req.Resp.WriteHeader(http.StatusInternalServerError)
 			log.Printf("error while adding log: %s", err)
 			return
 		}
 	}
-	req.w.WriteHeader(http.StatusCreated)
+	req.Resp.WriteHeader(http.StatusCreated)
 }
 
-func (s *Stupid) crashReport(req *stupidRequest, table db.CrashTable) {
-	if req.method != http.MethodPost {
-		req.w.WriteHeader(http.StatusBadRequest)
+func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
+	if req.Method != http.MethodPost {
+		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	dec := json.NewDecoder(req.r)
+	dec := json.NewDecoder(req.Body)
 	var c crash.Individual
 	err := dec.Decode(&c)
-	req.r.Close()
+	req.Body.Close()
 	if err != nil {
-		req.w.WriteHeader(http.StatusBadRequest)
+		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	err = table.AddCrash(c)
 	if err != nil {
-		req.w.WriteHeader(http.StatusInternalServerError)
+		req.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	req.w.WriteHeader(http.StatusCreated)
+	req.Resp.WriteHeader(http.StatusCreated)
 }
