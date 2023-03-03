@@ -2,8 +2,6 @@ package db
 
 import (
 	"errors"
-
-	"github.com/CalebQ42/stupid-backend/pkg/crash"
 )
 
 var ErrNotFound error = errors.New("not found")
@@ -24,15 +22,6 @@ type Table interface {
 	// Update an existing key. This should do a full replacement of values.
 	Update(key string, v any) error
 	Has(key string) (bool, error)
-}
-
-type CrashTable interface {
-	Table
-	// Add the individual crash to the given crash group.
-	// Should be able to parse the crash's error and first line
-	// and add it to the appropriate crash group.
-	// Should also detect if the given individual crash has already been added.
-	AddCrash(c crash.Individual) error
 }
 
 type App struct {

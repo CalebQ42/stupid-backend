@@ -7,6 +7,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type CrashTable interface {
+	Table
+	// Add the individual crash to the given crash group.
+	// Should be able to parse the crash's error and first line
+	// and add it to the appropriate crash group.
+	// Should also detect if the given individual crash has already been added.
+	AddCrash(c crash.Individual) error
+}
+
 type fromTable struct {
 	Table
 }
