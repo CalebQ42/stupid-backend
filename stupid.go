@@ -18,6 +18,8 @@ type Stupid struct {
 	Users db.Table
 	// Get a db.App for the given appId.
 	AppTables func(appID string) db.App
+
+	Extension func(*Request)
 }
 
 func NewStupidBackend(keyTable db.Table) *Stupid {
@@ -90,8 +92,8 @@ func (s *Stupid) logReq(req *Request, logs db.Table) {
 	}
 	ok, err := logs.Has(id[0])
 	if err != nil {
-		req.Resp.WriteHeader(http.StatusInternalServerError)
 		log.Printf("error while checking if log id is already present: %s", err)
+		req.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	usr := logUser{
@@ -102,15 +104,15 @@ func (s *Stupid) logReq(req *Request, logs db.Table) {
 	if ok {
 		err = logs.Update(id[0], usr)
 		if err != nil {
-			req.Resp.WriteHeader(http.StatusInternalServerError)
 			log.Printf("error while updating log: %s", err)
+			req.Resp.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	} else {
 		_, err = logs.Add(usr)
 		if err != nil {
-			req.Resp.WriteHeader(http.StatusInternalServerError)
 			log.Printf("error while adding log: %s", err)
+			req.Resp.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
@@ -132,6 +134,7 @@ func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
 	}
 	err = table.AddCrash(c)
 	if err != nil {
+		log.Printf("error while adding crash: %s", err)
 		req.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}

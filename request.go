@@ -2,8 +2,8 @@ package stupid
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -38,7 +38,6 @@ func (s *Request) validKey(keyTable db.Table) bool {
 	}
 	err := keyTable.Get(key, &s.ApiKey)
 	if err != nil {
-		fmt.Println(err)
 		return false
 	}
 	if s.ApiKey.Death != -1 {
@@ -57,12 +56,14 @@ func (s *Request) handleKeyReq() {
 	}
 	out, err := json.MarshalIndent(s.ApiKey, "", "\t")
 	if err != nil {
+		log.Printf("error while marshalling key: %s", err)
 		s.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	s.Resp.Header().Add("content-type", "application/json")
 	_, err = s.Resp.Write(out)
 	if err != nil {
+		log.Printf("error while writing key: %s", err)
 		s.Resp.WriteHeader(http.StatusInternalServerError)
 	}
 }

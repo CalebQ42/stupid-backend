@@ -69,3 +69,27 @@ Request body:
 ```
 
 If successful, returns 201.
+
+### Authenticate
+
+> POST: /auth?key={api_key}
+
+Requires the userAuth permission
+
+Request Body:
+
+```JSON
+{
+  "username": "username",
+  "password": "password"
+}
+```
+
+Response:
+
+```JSON
+{
+  "token": "jwt token",
+  "timout": 0 // Minutes remaining until timeout is done.
+}
+```
