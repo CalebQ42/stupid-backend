@@ -1,12 +1,14 @@
 package stupid
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/CalebQ42/stupid-backend/pkg/crash"
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
 
@@ -60,6 +62,12 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
+	case "crash":
+		if s.AppTables != nil && req.apiKey.Permissions["crash"] {
+			s.crashReport(req, s.AppTables(req.apiKey.AppID).Crashes)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -105,6 +113,27 @@ func (s *Stupid) logReq(req *stupidRequest, logs db.Table) {
 			log.Printf("error while adding log: %s", err)
 			return
 		}
+	}
+	req.w.WriteHeader(http.StatusCreated)
+}
+
+func (s *Stupid) crashReport(req *stupidRequest, table db.CrashTable) {
+	if req.method != http.MethodPost {
+		req.w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	dec := json.NewDecoder(req.r)
+	var c crash.Individual
+	err := dec.Decode(&c)
+	req.r.Close()
+	if err != nil {
+		req.w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err = table.AddCrash(c)
+	if err != nil {
+		req.w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	req.w.WriteHeader(http.StatusCreated)
 }

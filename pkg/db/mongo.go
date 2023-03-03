@@ -3,7 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/CalebQ42/stupid-backend/pkg/crash"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -50,6 +53,40 @@ func (m MongoTable) Has(key string) (bool, error) {
 	return true, nil
 }
 
-func (m MongoTable) ContainsIndividualCrash(id string) (bool, error) {
+func (m MongoTable) Find(values map[string]any, v any) (err error) {
+	res := m.c.FindOne(context.TODO(), values)
+	if res.Err() == mongo.ErrNoDocuments {
+		return ErrNotFound
+	} else if res.Err() != nil {
+		return res.Err()
+	}
+	return res.Decode(v)
+}
 
+func (m MongoTable) FindMany(values map[string]any, v any) (err error) {
+	res, err := m.c.Find(context.TODO(), values)
+	if err == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+	return res.All(context.TODO(), v)
+}
+
+func (m MongoTable) AddCrash(c crash.Individual) error {
+	first, _, _ := strings.Cut(c.Stack, "\n")
+	res := m.c.FindOne(context.TODO(), bson.M{"crashes._id": c.ID})
+	if res.Err() != nil && res.Err() != mongo.ErrNoDocuments {
+		return res.Err()
+	}
+	res = m.c.FindOneAndUpdate(context.TODO(), bson.M{"error": c.Error, "first": first}, bson.D{{Key: "$addToSet", Value: bson.M{"crashes": c}}})
+	if res.Err() == mongo.ErrNoDocuments {
+		newGroup := crash.Group{
+			ID:        uuid.NewString(),
+			Error:     c.Error,
+			FirstLine: first,
+			Crashes:   []crash.Individual{c},
+		}
+		_, err := m.c.InsertOne(context.TODO(), newGroup)
+		return err
+	}
+	return res.Err()
 }

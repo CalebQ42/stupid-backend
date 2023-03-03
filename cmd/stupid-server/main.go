@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/CalebQ42/stupid-backend"
 	"github.com/CalebQ42/stupid-backend/pkg/db"
-	"github.com/CalebQ42/stupid-backend/pkg/stupid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -30,7 +30,7 @@ func main() {
 	st.AppTables = func(id string) db.App {
 		return db.App{
 			Logs:    db.NewMongoTable(cl.Database(id).Collection("log")),
-			Crashes: db.NewMongoTable(cl.Database(id).Collection("crash")),
+			Crashes: db.NewMongoTable(cl.Database(id).Collection("crashes")),
 		}
 	}
 	http.ListenAndServe(":4223", st)

@@ -18,13 +18,15 @@ A purposely simple and "stupid" backend. Primarily created for [SWAssistant](htt
 
 These are the available functions in the core setup. These are meant to be added to in a specific implementation.
 
+### API Key Info
+
 > GET: /key/{api_key}
 
 Requires the key permission.
 
 ```json
 {
-  "key": "uuid string",
+  "id": "uuid string",
   "appID": "myApp",
   "alias": "Human readable description of the key",
   "permissions": {
@@ -39,10 +41,31 @@ Requires the key permission.
 }
 ```
 
+### Log Connection
+
 > POST: /log?key={api_key}&id={uuid}&platform={platform}
 
 Requires the log permission.
 
 Logs that a user connected to the API. This is purely meant to get a rough amount of active users. Should be opt-in and IDs are removed if they haven't logged within 30 days.
+
+If successful, returns 201.
+
+### Report Crash
+
+> POST: /crash?key={api_key}
+
+Requires the crash permission.
+
+Request body:
+
+```JSON
+{
+  "id": "uuid string",
+  "error": "error",
+  "platform": "platform",
+  "stack": "stacktrace"
+}
+```
 
 If successful, returns 201.
