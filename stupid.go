@@ -1,14 +1,10 @@
 package stupid
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 	"path"
 	"strings"
-	"time"
 
-	"github.com/CalebQ42/stupid-backend/pkg/crash"
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
 
@@ -73,70 +69,4 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 	}
-}
-
-func (s *Stupid) logReq(req *Request, logs db.Table) {
-	if req.Method != http.MethodPost {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	id, ok := req.Query["id"]
-	if !ok || len(id) != 1 {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	plat, ok := req.Query["platform"]
-	if !ok || len(plat) != 1 {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	ok, err := logs.Has(id[0])
-	if err != nil {
-		log.Printf("error while checking if log id is already present: %s", err)
-		req.Resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	usr := logUser{
-		ID:       id[0],
-		Platform: plat[0],
-		LastCon:  time.Now(),
-	}
-	if ok {
-		err = logs.Update(id[0], usr)
-		if err != nil {
-			log.Printf("error while updating log: %s", err)
-			req.Resp.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else {
-		_, err = logs.Add(usr)
-		if err != nil {
-			log.Printf("error while adding log: %s", err)
-			req.Resp.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-	req.Resp.WriteHeader(http.StatusCreated)
-}
-
-func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
-	if req.Method != http.MethodPost {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	dec := json.NewDecoder(req.Body)
-	var c crash.Individual
-	err := dec.Decode(&c)
-	req.Body.Close()
-	if err != nil {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	err = table.AddCrash(c)
-	if err != nil {
-		log.Printf("error while adding crash: %s", err)
-		req.Resp.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	req.Resp.WriteHeader(http.StatusCreated)
 }
