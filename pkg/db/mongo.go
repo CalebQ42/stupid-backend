@@ -24,7 +24,9 @@ func NewMongoTable(c *mongo.Collection) *MongoTable {
 
 func (m MongoTable) Get(key string, v any) error {
 	res := m.c.FindOne(context.TODO(), bson.D{{Key: "_id", Value: key}})
-	if res.Err() != nil {
+	if res.Err() == mongo.ErrNoDocuments {
+		return ErrNotFound
+	} else if res.Err() != nil {
 		return res.Err()
 	}
 	return res.Decode(v)
@@ -43,16 +45,6 @@ func (m MongoTable) Update(key string, v any) error {
 	return res.Err()
 }
 
-func (m MongoTable) Has(key string) (bool, error) {
-	res := m.c.FindOne(context.TODO(), bson.M{"_id": key})
-	if res.Err() == mongo.ErrNoDocuments {
-		return false, nil
-	} else if res.Err() != nil {
-		return false, res.Err()
-	}
-	return true, nil
-}
-
 func (m MongoTable) Find(values map[string]any, v any) (err error) {
 	res := m.c.FindOne(context.TODO(), values)
 	if res.Err() == mongo.ErrNoDocuments {
@@ -69,6 +61,31 @@ func (m MongoTable) FindMany(values map[string]any, v any) (err error) {
 		return ErrNotFound
 	}
 	return res.All(context.TODO(), v)
+}
+
+func (m MongoTable) Has(key string) (bool, error) {
+	res := m.c.FindOne(context.TODO(), bson.M{"_id": key})
+	if res.Err() == mongo.ErrNoDocuments {
+		return false, nil
+	} else if res.Err() != nil {
+		return false, res.Err()
+	}
+	return true, nil
+}
+
+func (m MongoTable) Contains(values map[string]any) (bool, error) {
+	res := m.c.FindOne(context.TODO(), values)
+	if res.Err() == mongo.ErrNoDocuments {
+		return false, nil
+	} else if res.Err() != nil {
+		return false, res.Err()
+	}
+	return true, nil
+}
+
+func (m MongoTable) Delete(key string) error {
+	_, err := m.c.DeleteOne(context.TODO(), bson.M{"_id": key})
+	return err
 }
 
 func (m MongoTable) AddCrash(c crash.Individual) error {

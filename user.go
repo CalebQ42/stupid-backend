@@ -1,11 +1,9 @@
 package stupid
 
-import "time"
-
 type logUser struct {
-	LastCon  time.Time `json:"lastCon" bson:"lastCon"`
-	ID       string    `json:"id" bson:"_id"`
-	Platform string    `json:"platform" bson:"platform"`
+	ID       string `json:"id" bson:"_id"`
+	Platform string `json:"platform" bson:"platform"`
+	LastCon  int64  `json:"lastCon" bson:"lastCon"`
 }
 
 type AuthdUser struct {
@@ -15,11 +13,11 @@ type AuthdUser struct {
 }
 
 type user struct {
-	LastTimeout time.Time `json:"lastTimeout" bson:"lastTimeout"`
-	ID          string    `json:"id" bson:"_id"`
-	Username    string    `json:"username" bson:"username"`
-	Email       string    `json:"email" bson:"email"`
-	Password    string    `json:"password" bson:"password"`
-	Salt        string    `json:"salt" bson:"salt"`
-	Failed      int       `json:"failed" bson:"failed"`
+	ID          string `json:"id" bson:"_id"`
+	Username    string `json:"username" bson:"username"`
+	Email       string `json:"email" bson:"email"`
+	Password    string `json:"password" bson:"password"`
+	Salt        string `json:"salt" bson:"salt"`
+	LastTimeout int64  `json:"lastTimeout" bson:"lastTimeout"`
+	Failed      int    `json:"failed" bson:"failed"`
 }

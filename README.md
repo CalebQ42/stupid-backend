@@ -1,6 +1,6 @@
 # Stupid Backend
 
-A purposely simple and "stupid" backend. Primarily created for [SWAssistant](https://github.com/CalebQ42/SWAssistant) with that specific implementation found at [swassistant-backend](https://github.com/CalebQ42/swassistant-backend).
+A purposely simple and "stupid" backend. Primarily created for [SWAssistant](https://github.com/CalebQ42/SWAssistant) with that specific implementation found at [swassistant-backend](https://github.com/CalebQ42/swassistant-backend). Though made for SWAssistant, this is a barebones that provides some common use cases I (and potentially others) that can be quickly and easily deployed.
 
 ## Functions
 
@@ -13,6 +13,7 @@ A purposely simple and "stupid" backend. Primarily created for [SWAssistant](htt
   - Authentication provided, but specific uses are left up to the implementation.
 - All of the above, but with multiple apps using the same backend.
   - Each app will have a seperate App ID.
+  - Users will be shared between multiple apps.
 
 ## Base URLs
 
@@ -33,11 +34,11 @@ Requires the key permission.
     "key": true, // Get info about this key.
     "count": true, // Get user count; total user and users per platform
     "log": true, // Log a user connecting.
-    "userAuth": true, // Authenticate a user account. Includes creating new users.
-    "crash": true, // Send crash reports
+    "auth": true, // Authenticate and create user accounts.
+    "crash": true // Send crash reports
     // Additional permissions should be added by specific implementations.
   },
-  "death": 0 // Unix timestamp (seconds) of the planned death of the key. Keys can be expired at any time without warning. -1 indicates no intended death time.
+  "death": -1 // Unix timestamp (seconds) of the planned death of the key. Keys can be expired at any time without warning. -1 indicates no intended death time.
 }
 ```
 
@@ -70,11 +71,44 @@ Request body:
 
 If successful, returns 201.
 
+### Create User
+
+> POST: /createUser?key={api_key}
+
+Requires the userAuth permission. If not using stupid-server, make sure user creation is only allowed when using TLS.
+
+Request Body:
+
+```JSON
+{
+  // Must not be empty or just spaces and cannot end or begin with spaces.
+  // Must be less then 64 characters.
+  // Spaces will be trimmed.
+  "username": "username",
+  // Passwords must be between 5-32 characters.
+  "password": "password",
+  "email": "email"
+}
+```
+
+Response:
+
+```JSON
+{
+  "token": "jwt token",
+  // Only populated if there's some problem with creating the user.
+  // username - Username is already taken or invalid.
+  // email - email is (probably) invalid.
+  // password - Password is invalid.
+  "problem": "username"
+}
+```
+
 ### Authenticate
 
 > POST: /auth?key={api_key}
 
-Requires the userAuth permission
+Requires the userAuth permission. If not using stupid-server, make sure user authentication is only allowed when using TLS.
 
 Request Body:
 
@@ -87,9 +121,30 @@ Request Body:
 
 Response:
 
+If username is not found, returns 404.
+
 ```JSON
 {
   "token": "jwt token",
   "timout": 0 // Minutes remaining until timeout is done.
 }
 ```
+
+### Authenticated requests
+
+There are no requests provided by stupid-backend that requires authentication, but will check authentications if the `token` query is given and extension on stupid-backend will have access to some basic info about the user. Ex:
+
+> GET: /getdata?key={api_key}&token={jwt_token}
+
+## TODO
+
+This libary is yet unfinished, and still needs a couple things.
+
+- Change passwords.
+  - De-authorize JWT tokens when this is done.
+- Provide more pre-made db's
+  - At least one for sql.
+- Proper tests
+  - Could cause less headaches for me in the future.
+- Build a dashboard
+  - Add the necessary APIs for access to this info.

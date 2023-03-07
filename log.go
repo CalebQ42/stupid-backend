@@ -32,7 +32,7 @@ func (s *Stupid) logReq(req *Request, logs db.Table) {
 	usr := logUser{
 		ID:       id[0],
 		Platform: plat[0],
-		LastCon:  time.Now(),
+		LastCon:  time.Now().Unix(),
 	}
 	if ok {
 		err = logs.Update(id[0], usr)

@@ -1,27 +1,39 @@
 package stupid
 
 import (
+	"crypto/ed25519"
 	"net/http"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
 
 // An instance of the stupid backend. Implements http.Handler
 type Stupid struct {
-	Keys  db.Table
-	Users db.Table
+	keys  db.Table
+	users db.UserTable
 	// Get a db.App for the given appId.
 	AppTables func(appID string) db.App
-
-	Extension func(*Request)
+	// Handle a request beyond the default abilities.
+	Extension       func(*Request)
+	createUserMutex *sync.Mutex
+	userPriv        ed25519.PrivateKey
+	userPub         ed25519.PublicKey
 }
 
 func NewStupidBackend(keyTable db.Table) *Stupid {
 	return &Stupid{
-		Keys: keyTable,
+		keys:            keyTable,
+		createUserMutex: &sync.Mutex{},
 	}
+}
+
+func (s *Stupid) EnableUserAuth(userTable db.UserTable, pubKey ed25519.PublicKey, privKey ed25519.PrivateKey) {
+	s.users = userTable
+	s.userPub = pubKey
+	s.userPriv = privKey
 }
 
 // Sets *Stupid.AppTables to use this map, overriding if it's already been set.
@@ -43,7 +55,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !req.validKey(s.Keys) {
+	if !req.validKey(s.keys) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -63,6 +75,18 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "crash":
 		if s.AppTables != nil && req.ApiKey.Permissions["crash"] {
 			s.crashReport(req, s.AppTables(req.ApiKey.AppID).Crashes)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	case "createUser":
+		if req.ApiKey.Permissions["auth"] {
+			s.createUser(req)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+	case "auth":
+		if req.ApiKey.Permissions["auth"] {
+			//TODO: autnenticate user
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
