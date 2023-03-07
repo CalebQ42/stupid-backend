@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"time"
 
 	"github.com/CalebQ42/stupid-backend/pkg/crash"
 )
@@ -47,7 +46,7 @@ type UserTable interface {
 	// Increment the "failed" field of the user with the given id by 1.
 	IncrementFailed(id string) error
 	// Same as IncrementFailed but also update the "lastTimeout" field with the given time.
-	IncrementAndUpdateLastTimeout(id string, t time.Time) error
+	IncrementAndUpdateLastTimeout(id string, t int64) error
 }
 
 type App struct {

@@ -50,6 +50,18 @@ func (s *Stupid) generateJWT(u *user) (string, error) {
 
 var ErrExpired = errors.New("token is expired")
 
+func (s *Stupid) handleToken(r *Request) (err error) {
+	t, ok := r.Query["token"]
+	if !ok {
+		return
+	}
+	if len(t) != 1 {
+		return
+	}
+	r.User, err = s.decodeJWT(t[0])
+	return
+}
+
 // Returns jwt.ErrSigMiss on bad token, db.ErrNotFound if id is invalid, and ErrExpired if expired.
 func (s *Stupid) decodeJWT(token string) (*AuthdUser, error) {
 	c, err := jwt.EdDSACheck([]byte(token), s.userPub)
@@ -70,11 +82,6 @@ func (s *Stupid) decodeJWT(token string) (*AuthdUser, error) {
 		Username: usr.Username,
 		Email:    usr.Email,
 	}, nil
-}
-
-type createResp struct {
-	Token   string `json:"token"`
-	Problem string `json:"problem"`
 }
 
 func (s *Stupid) createUser(r *Request) {
@@ -150,8 +157,9 @@ func (s *Stupid) createUser(r *Request) {
 		r.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	out, err := json.Marshal(createResp{
-		Token: token,
+	out, err := json.Marshal(map[string]string{
+		"token":   token,
+		"problem": "",
 	})
 	if err != nil {
 		fmt.Printf("error while marshalling response: %s", err)
@@ -168,8 +176,10 @@ func (s *Stupid) createUser(r *Request) {
 }
 
 func writeCreateUserProblemResp(problem string, w http.ResponseWriter) {
-	var resp createResp
-	resp.Problem = problem
+	resp := map[string]string{
+		"token":   "",
+		"problem": problem,
+	}
 	out, err := json.Marshal(resp)
 	if err != nil {
 		fmt.Printf("error while marshaling create user response: %s", err)
@@ -206,11 +216,33 @@ func (s *Stupid) authUser(r *Request) {
 		r.Resp.WriteHeader(http.StatusNotFound)
 		return
 	}
-
 	if authUsr.LastTimeout != 0 {
-		// TODO
+		timeoutTime := 3 ^ ((authUsr.Failed / 3) - 1)
+		if timeoutTime > 60 {
+			timeoutTime = 60
+		}
+		tim := time.Unix(authUsr.LastTimeout, 0)
+		tim = tim.Add(time.Duration(timeoutTime) * time.Minute)
+		if tim.After(time.Now()) {
+			remain := time.Until(tim).Round(time.Minute)
+			var out []byte
+			out, err = json.Marshal(map[string]any{
+				"token":   "",
+				"timeout": int64(remain.Minutes()),
+			})
+			if err != nil {
+				fmt.Printf("error while marshalling auth response: %s", err)
+				r.Resp.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			_, err = r.Resp.Write(out)
+			if err != nil {
+				fmt.Printf("error while writing auth response: %s", err)
+				r.Resp.WriteHeader(http.StatusInternalServerError)
+			}
+			return
+		}
 	}
-
 	pass, err = hashPassword(pass, authUsr.Salt)
 	if err != nil {
 		fmt.Printf("error while hashing password: %s", err)
@@ -218,6 +250,56 @@ func (s *Stupid) authUser(r *Request) {
 		return
 	}
 	if pass != authUsr.Password {
-		
+		timeoutTime := -1
+		if authUsr.Failed+1%3 == 0 {
+			err = s.users.IncrementAndUpdateLastTimeout(authUsr.ID, time.Now().Unix())
+			timeoutTime = 3 ^ ((authUsr.Failed / 3) - 1)
+			if timeoutTime > 60 {
+				timeoutTime = 60
+			}
+		} else {
+			err = s.users.IncrementFailed(authUsr.ID)
+		}
+		if err != nil {
+			fmt.Printf("error while incrementing failed: %s", err)
+			r.Resp.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var out []byte
+		out, err = json.Marshal(map[string]any{
+			"token":   "",
+			"timeout": timeoutTime,
+		})
+		if err != nil {
+			fmt.Printf("error while marshalling auth response: %s", err)
+			r.Resp.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, err = r.Resp.Write(out)
+		if err != nil {
+			fmt.Printf("error while writing auth response: %s", err)
+			r.Resp.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	token, err := s.generateJWT(authUsr)
+	if err != nil {
+		fmt.Printf("error while generating jwt: %s", err)
+		r.Resp.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	out, err := json.Marshal(map[string]any{
+		"token":   token,
+		"timeout": -1,
+	})
+	if err != nil {
+		fmt.Printf("error while marshalling response: %s", err)
+		r.Resp.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = r.Resp.Write(out)
+	if err != nil {
+		fmt.Printf("error while writing response: %s", err)
+		r.Resp.WriteHeader(http.StatusInternalServerError)
 	}
 }

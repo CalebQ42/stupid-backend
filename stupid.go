@@ -59,6 +59,11 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	err := s.handleToken(req)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	switch req.Path[0] {
 	case "key":
 		if req.ApiKey.Permissions["key"] {
@@ -86,7 +91,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	case "auth":
 		if req.ApiKey.Permissions["auth"] {
-			//TODO: autnenticate user
+			s.authUser(req)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}

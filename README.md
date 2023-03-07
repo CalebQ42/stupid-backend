@@ -110,6 +110,8 @@ Response:
 
 Requires the userAuth permission. If not using stupid-server, make sure user authentication is only allowed when using TLS.
 
+Requests will timout every 3 failed attempts for `3^((failed/3)-1)` minutes with a maximum of 60 minutes of timeout.
+
 Request Body:
 
 ```JSON
@@ -121,12 +123,12 @@ Request Body:
 
 Response:
 
-If username is not found, returns 404.
+If username is not found, returns 404 with no body.
 
 ```JSON
 {
   "token": "jwt token",
-  "timout": 0 // Minutes remaining until timeout is done.
+  "timeout": -1 // Minutes remaining until timeout is done. -1 if no timeout.
 }
 ```
 
@@ -135,6 +137,8 @@ If username is not found, returns 404.
 There are no requests provided by stupid-backend that requires authentication, but will check authentications if the `token` query is given and extension on stupid-backend will have access to some basic info about the user. Ex:
 
 > GET: /getdata?key={api_key}&token={jwt_token}
+
+If a token is present, but the token is invalid (expired or otherwise), returns 401.
 
 ## TODO
 

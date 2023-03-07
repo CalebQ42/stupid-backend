@@ -107,3 +107,19 @@ func (m MongoTable) AddCrash(c crash.Individual) error {
 	}
 	return res.Err()
 }
+
+func (m MongoTable) IncrementFailed(id string) error {
+	res := m.c.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$inc": bson.M{"failed": 1}})
+	if res.Err() == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+	return res.Err()
+}
+
+func (m MongoTable) IncrementAndUpdateLastTimeout(id string, t int64) error {
+	res := m.c.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$inc": bson.M{"failed": 1}, "$set": bson.M{"lastTimeout": t}})
+	if res.Err() == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+	return res.Err()
+}
