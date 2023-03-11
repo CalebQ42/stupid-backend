@@ -1,0 +1,78 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "Stupid-test",
+    "dateExported": "2023-03-03T15:23:44.020Z",
+    "version": "1.1",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "b9752859-a447-44f6-8a04-11595c90d9f1",
+            "colId": "546d5bcd-54bb-4875-afdc-6796509d0220",
+            "containerId": "",
+            "name": "Crash",
+            "url": "http://127.0.0.1:4223/crash?key=0",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2023-03-03T15:21:17.705Z",
+            "modified": "2023-03-03T15:22:52.795Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "key",
+                    "value": "0",
+                    "isPath": false
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"id\": \"0\",\n  \"stack\": \"this is broken on line 42\\nFrom Line 43\\nand even more from line 44\",\n  \"error\": \"new error\",\n  \"platform\": \"a platform made of wood\"\n}",
+                "form": []
+            },
+            "tests": []
+        },
+        {
+            "_id": "4e16726d-20cd-42bc-98b6-92ccaf90fac1",
+            "colId": "546d5bcd-54bb-4875-afdc-6796509d0220",
+            "containerId": "",
+            "name": "Log",
+            "url": "http://127.0.0.1:4223/log?key=0&id=1&platform=testing",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2023-03-03T15:21:29.473Z",
+            "modified": "2023-03-03T15:23:33.719Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "key",
+                    "value": "0",
+                    "isPath": false
+                },
+                {
+                    "name": "id",
+                    "value": "1",
+                    "isPath": false
+                },
+                {
+                    "name": "platform",
+                    "value": "testing",
+                    "isPath": false
+                }
+            ],
+            "tests": []
+        },
+        {
+            "_id": "3271353e-a7ca-4c28-9272-989e21474f7e",
+            "colId": "546d5bcd-54bb-4875-afdc-6796509d0220",
+            "containerId": "",
+            "name": "Key Info",
+            "url": "http://127.0.0.1:4223/key/0",
+            "method": "GET",
+            "sortNum": 30000,
+            "created": "2023-03-03T15:21:35.111Z",
+            "modified": "2023-03-03T15:23:26.520Z",
+            "headers": [],
+            "params": [],
+            "tests": []
+        }
+    ]
+}
