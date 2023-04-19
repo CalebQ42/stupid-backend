@@ -12,21 +12,21 @@ import (
 
 // An instance of the stupid backend. Implements http.Handler
 type Stupid struct {
-	keys  db.Table
+	keys  db.KeyTable
 	users db.UserTable
 	// Get a db.App for the given appId.
-	AppTables func(appID string) db.App
-	// Handle a request beyond the default abilities.
-	Extension       func(*Request)
+	Apps func(appID string) *App
+
 	createUserMutex *sync.Mutex
 	userPriv        ed25519.PrivateKey
 	userPub         ed25519.PublicKey
 }
 
-func NewStupidBackend(keyTable db.Table) *Stupid {
+func NewStupidBackend(keyTable db.KeyTable, apps func(appID string) *App) *Stupid {
 	return &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
+		Apps:            apps,
 	}
 }
 
@@ -36,19 +36,13 @@ func (s *Stupid) EnableUserAuth(userTable db.UserTable, pubKey ed25519.PublicKey
 	s.userPriv = privKey
 }
 
-// Sets *Stupid.AppTables to use this map, overriding if it's already been set.
-func (s *Stupid) SetApps(apps map[string]db.App) {
-	s.AppTables = func(id string) db.App {
-		return apps[id]
-	}
-}
-
 func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := &Request{
 		Body:   r.Body,
 		Query:  r.URL.Query(),
 		Path:   strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/"),
 		Method: r.Method,
+		Host:   r.Host,
 		Resp:   w,
 	}
 	if len(req.Path) == 0 {
@@ -72,14 +66,14 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "log":
-		if s.AppTables != nil && req.ApiKey.Permissions["log"] {
-			s.logReq(req, s.AppTables(req.ApiKey.AppID).Logs)
+		if s.Apps != nil && req.ApiKey.Permissions["log"] {
+			s.logReq(req, s.Apps(req.ApiKey.AppID).Logs)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "crash":
-		if s.AppTables != nil && req.ApiKey.Permissions["crash"] {
-			s.crashReport(req, s.AppTables(req.ApiKey.AppID).Crashes)
+		if s.Apps != nil && req.ApiKey.Permissions["crash"] {
+			s.crashReport(req, s.Apps(req.ApiKey.AppID).Crashes)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -95,7 +89,8 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
-	default:
+	}
+	if s.Apps == nil || !s.Apps(req.ApiKey.AppID).Extension(req) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }

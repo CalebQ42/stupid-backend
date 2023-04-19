@@ -38,6 +38,9 @@ Requires the key permission.
     "crash": true // Send crash reports
     // Additional permissions should be added by specific implementations.
   },
+  "allowedDomains": [
+    "example.com"
+  ], //Allows for web apps to use this key without having to provide the key.
   "death": -1 // Unix timestamp (seconds) of the planned death of the key. Keys can be expired at any time without warning. -1 indicates no intended death time.
 }
 ```

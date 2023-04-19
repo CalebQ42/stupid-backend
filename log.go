@@ -29,10 +29,11 @@ func (s *Stupid) logReq(req *Request, logs db.Table) {
 		req.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	now := time.Now()
 	usr := logUser{
 		ID:       id[0],
 		Platform: plat[0],
-		LastCon:  time.Now().Unix(),
+		LastCon:  (now.Year()*10000) + (int(now.Month()) * 100) + (now.Day()),
 	}
 	if ok {
 		err = logs.Update(id[0], usr)

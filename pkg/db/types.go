@@ -32,6 +32,12 @@ type Table interface {
 	Delete(key string) error
 }
 
+type KeyTable interface {
+	Table
+	// Get the API Key for the given domain.
+	KeyForDomain(domain string, v any) error
+}
+
 type CrashTable interface {
 	Table
 	// Add the individual crash to the given crash group.
@@ -47,9 +53,4 @@ type UserTable interface {
 	IncrementFailed(id string) error
 	// Same as IncrementFailed but also update the "lastTimeout" field with the given time.
 	IncrementAndUpdateLastTimeout(id string, t int64) error
-}
-
-type App struct {
-	Logs    Table
-	Crashes CrashTable
 }

@@ -88,6 +88,14 @@ func (m MongoTable) Delete(key string) error {
 	return err
 }
 
+func (m MongoTable) KeyForDomain(domain string, v any) error {
+	res := m.c.FindOne(context.TODO(), bson.M{"allowedDomains": domain})
+	if res.Err() == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+	return res.Decode(v)
+}
+
 func (m MongoTable) AddCrash(c crash.Individual) error {
 	first, _, _ := strings.Cut(c.Stack, "\n")
 	res := m.c.FindOne(context.TODO(), bson.M{"crashes._id": c.ID})

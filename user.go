@@ -3,7 +3,7 @@ package stupid
 type logUser struct {
 	ID       string `json:"id" bson:"_id"`
 	Platform string `json:"platform" bson:"platform"`
-	LastCon  int64  `json:"lastCon" bson:"lastCon"`
+	LastCon  int    `json:"lastCon" bson:"lastCon"`
 }
 
 type AuthdUser struct {
