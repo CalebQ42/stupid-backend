@@ -32,13 +32,26 @@ Requires the key permission.
   "alias": "Human readable description of the key",
   "permissions": {
     "key": true, // Get info about this key.
-    "count": true, // Get user count; total user and users per platform
+    "count": true, // Get user count; Total user and users per platform. Based on Log.
     "log": true, // Log a user connecting.
     "auth": true, // Authenticate and create user accounts.
     "crash": true // Send crash reports
     // Additional permissions should be added by specific implementations.
   },
   "death": -1 // Unix timestamp (seconds) of the planned death of the key. Keys can be expired at any time without warning. -1 indicates no intended death time.
+}
+```
+
+### User Count
+
+> GET: /count?key={api_key}&platform={platform}
+
+Required the count permission. Platform query is optional.
+
+```json
+{
+  "platform": "platform", // If no platform is given, will be "all".
+  "count": 0
 }
 ```
 
@@ -147,7 +160,6 @@ This libary is yet unfinished, and still needs a couple things.
 - Change passwords.
   - De-authorize JWT tokens when this is done.
 - Provide more pre-made db's
-  - At least one for sql.
 - Proper tests
   - Could cause less headaches for me in the future.
 - Build a dashboard

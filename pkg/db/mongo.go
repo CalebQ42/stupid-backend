@@ -88,6 +88,10 @@ func (m MongoTable) Delete(key string) error {
 	return err
 }
 
+func (m MongoTable) Count(filter map[string]any) (int64, error) {
+	return m.c.CountDocuments(context.TODO(), filter)
+}
+
 func (m MongoTable) KeyForDomain(domain string, v any) error {
 	res := m.c.FindOne(context.TODO(), bson.M{"allowedDomains": domain})
 	if res.Err() == mongo.ErrNoDocuments {

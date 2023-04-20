@@ -30,6 +30,8 @@ type Table interface {
 	Contains(values map[string]any) (bool, error)
 	// Delete the given item.
 	Delete(key string) error
+	// Count of documents with the given filter applied
+	Count(filter map[string]any) (int64, error)
 }
 
 type CrashTable interface {

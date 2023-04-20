@@ -83,6 +83,12 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
+	case "count":
+		if req.ApiKey.Permissions["count"] {
+			s.count(req, app.Logs())
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
 	case "log":
 		if req.ApiKey.Permissions["log"] {
 			s.logReq(req, app.Logs())
