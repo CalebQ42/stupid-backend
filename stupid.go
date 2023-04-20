@@ -15,14 +15,14 @@ type Stupid struct {
 	keys  db.Table
 	users db.UserTable
 	// Get a db.App for the given appId.
-	Apps func(appID string) *App
+	Apps func(appID string) App
 
 	createUserMutex *sync.Mutex
 	userPriv        ed25519.PrivateKey
 	userPub         ed25519.PublicKey
 }
 
-func NewStupidBackend(keyTable db.Table, apps func(appID string) *App) *Stupid {
+func NewStupidBackend(keyTable db.Table, apps func(appID string) App) *Stupid {
 	return &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
@@ -57,6 +57,11 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	app := s.Apps(req.ApiKey.AppID)
+	if app == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	switch req.Path[0] {
 	case "key":
 		if req.ApiKey.Permissions["key"] {
@@ -65,14 +70,14 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "log":
-		if s.Apps != nil && req.ApiKey.Permissions["log"] {
-			s.logReq(req, s.Apps(req.ApiKey.AppID).Logs)
+		if req.ApiKey.Permissions["log"] {
+			s.logReq(req, app.Logs())
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	case "crash":
-		if s.Apps != nil && req.ApiKey.Permissions["crash"] {
-			s.crashReport(req, s.Apps(req.ApiKey.AppID).Crashes)
+		if req.ApiKey.Permissions["crash"] {
+			s.crashReport(req, app.Crashes())
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -88,9 +93,9 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
-	}
-	if s.Apps == nil || !s.Apps(req.ApiKey.AppID).Extension(req) {
-		print("yo")
-		w.WriteHeader(http.StatusBadRequest)
+	default:
+		if !app.Extension(req) {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	}
 }
