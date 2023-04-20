@@ -12,7 +12,7 @@ import (
 
 // An instance of the stupid backend. Implements http.Handler
 type Stupid struct {
-	keys  db.KeyTable
+	keys  db.Table
 	users db.UserTable
 	// Get a db.App for the given appId.
 	Apps func(appID string) *App
@@ -22,7 +22,7 @@ type Stupid struct {
 	userPub         ed25519.PublicKey
 }
 
-func NewStupidBackend(keyTable db.KeyTable, apps func(appID string) *App) *Stupid {
+func NewStupidBackend(keyTable db.Table, apps func(appID string) *App) *Stupid {
 	return &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
@@ -42,7 +42,6 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Query:  r.URL.Query(),
 		Path:   strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/"),
 		Method: r.Method,
-		Host:   r.Host,
 		Resp:   w,
 	}
 	if len(req.Path) == 0 {
@@ -91,6 +90,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if s.Apps == nil || !s.Apps(req.ApiKey.AppID).Extension(req) {
+		print("yo")
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }

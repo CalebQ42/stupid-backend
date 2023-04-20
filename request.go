@@ -23,35 +23,21 @@ type Request struct {
 
 // Both validates that the api key is present and is valid and
 // populates the apiKey value of stupidRequest (if it is valid).
-func (s *Request) validKey(keyTable db.KeyTable) bool {
+func (s *Request) validKey(keyTable db.Table) bool {
 	var key string
 	if s.Path[0] == "key" {
 		if len(s.Path) == 1 {
-			return s.validateHost(keyTable)
+			return false
 		}
 		key = s.Path[1]
 	} else {
 		k, ok := s.Query["key"]
 		if !ok || len(k) != 1 {
-			return s.validateHost(keyTable)
+			return false
 		}
 		key = k[0]
 	}
 	err := keyTable.Get(key, &s.ApiKey)
-	if err != nil {
-		return false
-	}
-	if s.ApiKey.Death != -1 {
-		deth := time.Unix(s.ApiKey.Death, 0)
-		if time.Now().After(deth) {
-			return false
-		}
-	}
-	return true
-}
-
-func (s *Request) validateHost(keyTable db.KeyTable) bool {
-	err := keyTable.KeyForDomain(s.Host, &s.ApiKey)
 	if err != nil {
 		return false
 	}

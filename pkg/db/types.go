@@ -32,12 +32,6 @@ type Table interface {
 	Delete(key string) error
 }
 
-type KeyTable interface {
-	Table
-	// Get the API Key for the given domain.
-	KeyForDomain(domain string, v any) error
-}
-
 type CrashTable interface {
 	Table
 	// Add the individual crash to the given crash group.
