@@ -12,11 +12,9 @@ import (
 
 // An instance of the stupid backend. Implements http.Handler
 type Stupid struct {
-	keys  db.Table
-	users db.UserTable
-	// Get a db.App for the given appId.
-	Apps func(appID string) App
-
+	keys            db.Table
+	users           db.UserTable
+	Apps            map[string]App
 	createUserMutex *sync.Mutex
 	headerValues    map[string]string
 	userPriv        ed25519.PrivateKey
@@ -24,7 +22,7 @@ type Stupid struct {
 }
 
 // Creates a new *Stupid.
-func NewStupidBackend(keyTable db.Table, apps func(appID string) App) *Stupid {
+func NewStupidBackend(keyTable db.Table, apps map[string]App) *Stupid {
 	return &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
@@ -71,7 +69,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	app := s.Apps(req.ApiKey.AppID)
+	app := s.Apps[req.ApiKey.AppID]
 	if app == nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
