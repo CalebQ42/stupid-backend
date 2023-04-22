@@ -212,6 +212,7 @@ func (a *AuthorizedDataApp) Extension(req *stupid.Request) bool {
 			if res.Err() == mongo.ErrNoDocuments {
 				_, err = a.DB.Collection("data").InsertOne(context.TODO(), bson.M{"_id": id, "owner": req.User.ID, "data": string(dat)})
 				if err != nil {
+					log.Println("Error while creating data:", err)
 					req.Resp.WriteHeader(http.StatusInternalServerError)
 					return true
 				}
