@@ -26,7 +26,7 @@ func NewDefaultApp(db *mongo.Database) *App {
 	}
 }
 
-func (a *App) Log() db.Table {
+func (a *App) Logs() db.Table {
 	return db.NewMongoTable(a.DB.Collection("logs"))
 }
 
