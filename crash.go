@@ -23,10 +23,14 @@ func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
 		return
 	}
 	if s.Apps[req.ApiKey.AppID].IgnoreOldVersionCrashes() {
-		if c.Version != s.Apps[req.ApiKey.AppID].LatestVersion() {
-			return
+		for _, v := range s.Apps[req.ApiKey.AppID].CurrentVersions() {
+			if c.Version == v {
+				goto addCrash
+			}
 		}
+		return
 	}
+addCrash:
 	err = table.AddCrash(c)
 	if err != nil {
 		log.Printf("error while adding crash: %s", err)

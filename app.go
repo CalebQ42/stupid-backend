@@ -7,5 +7,5 @@ type App interface {
 	Crashes() db.CrashTable
 	Extension(*Request) bool
 	IgnoreOldVersionCrashes() bool
-	LatestVersion() string
+	CurrentVersions() []string
 }

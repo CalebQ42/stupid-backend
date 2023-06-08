@@ -42,8 +42,8 @@ func (a *App) IgnoreOldVersionCrashes() bool {
 	return false
 }
 
-func (a *App) LatestVersion() string {
-	return ""
+func (a *App) CurrentVersions() []string {
+	return []string{}
 }
 
 // A simple implementation of stupid.App using mongodb.
