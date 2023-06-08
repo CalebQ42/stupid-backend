@@ -2,10 +2,12 @@ package stupid
 
 import (
 	"crypto/ed25519"
+	"log"
 	"net/http"
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
@@ -23,10 +25,34 @@ type Stupid struct {
 
 // Creates a new *Stupid.
 func NewStupidBackend(keyTable db.Table, apps map[string]App) *Stupid {
-	return &Stupid{
+	out := &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
 		Apps:            apps,
+	}
+	go out.cleanupLoop()
+	return out
+}
+
+func (s *Stupid) cleanupLoop() {
+	for range time.Tick(24 * time.Hour) {
+		cleanTmp := time.Now().Add(-24 * 30 * time.Hour)
+		cleanVal := cleanTmp.Year()*10000 + int(cleanTmp.Month())*100 + cleanTmp.Day()
+		var ids []string
+		var err error
+		for appName := range s.Apps {
+			ids, err = s.Apps[appName].Logs().LogsOlderThen(cleanVal)
+			if err != nil {
+				log.Println("Error when cleaning up old logs for "+appName+":", err)
+				continue
+			}
+			for i := range ids {
+				err = s.Apps[appName].Logs().Delete(ids[i])
+				if err != nil {
+					log.Println("Error when deleting old logs for "+appName+":", err)
+				}
+			}
+		}
 	}
 }
 

@@ -22,6 +22,11 @@ func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
 		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if s.Apps[req.ApiKey.AppID].IgnoreOldVersionCrashes() {
+		if c.Version != s.Apps[req.ApiKey.AppID].LatestVersion() {
+			return
+		}
+	}
 	err = table.AddCrash(c)
 	if err != nil {
 		log.Printf("error while adding crash: %s", err)

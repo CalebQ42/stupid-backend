@@ -38,6 +38,14 @@ func (a *App) Extension(*stupid.Request) bool {
 	return false
 }
 
+func (a *App) IgnoreOldVersionCrashes() bool {
+	return false
+}
+
+func (a *App) LatestVersion() string {
+	return ""
+}
+
 // A simple implementation of stupid.App using mongodb.
 // Can make requests to GET: /data/{data id}?key={API key} without any
 // authorization checks other then the API Key.

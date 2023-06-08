@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Satisfies both db.Table and db.CrashTable.
@@ -92,12 +93,30 @@ func (m MongoTable) Count(filter map[string]any) (int64, error) {
 	return m.c.CountDocuments(context.TODO(), filter)
 }
 
-func (m MongoTable) KeyForDomain(domain string, v any) error {
-	res := m.c.FindOne(context.TODO(), bson.M{"allowedDomains": domain})
-	if res.Err() == mongo.ErrNoDocuments {
-		return ErrNotFound
+func (m MongoTable) LogsOlderThen(value int) ([]string, error) {
+	out := make([]string, 0)
+	res, err := m.c.Find(context.TODO(), bson.M{"lastCon": bson.M{"$lt": value}}, options.Find().SetProjection(bson.M{"_id": 1}))
+	if err == mongo.ErrNoDocuments {
+		return out, nil
+	} else if err != nil {
+		return nil, err
 	}
-	return res.Decode(v)
+	var tmp struct {
+		ID string `bson:"_id"`
+	}
+	err = res.Decode(&tmp)
+	if err != nil {
+		return out, err
+	}
+	out = append(out, tmp.ID)
+	for res.Next(context.TODO()) {
+		err = res.Decode(&tmp)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, tmp.ID)
+	}
+	return out, res.Err()
 }
 
 func (m MongoTable) AddCrash(c crash.Individual) error {

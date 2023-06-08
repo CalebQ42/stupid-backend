@@ -78,7 +78,8 @@ Request body:
   "id": "uuid string",
   "error": "error",
   "platform": "platform",
-  "stack": "stacktrace"
+  "stack": "stacktrace",
+  "version": "app version",
 }
 ```
 

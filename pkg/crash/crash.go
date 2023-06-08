@@ -5,6 +5,7 @@ type Individual struct {
 	Error    string `json:"error" bson:"error"`
 	Platform string `json:"platform" bson:"platform"`
 	Stack    string `json:"stack" bson:"stack"`
+	Version  string `json:"version" bson:"version"`
 }
 
 type Group struct {

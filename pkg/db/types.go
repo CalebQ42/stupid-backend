@@ -34,6 +34,13 @@ type Table interface {
 	Count(filter map[string]any) (int64, error)
 }
 
+type LogTable interface {
+	Table
+	// Returns a list of keys that have a lastCon value that's less then the given value.
+	// lastCon is a date stored in YYYYMMDD format.
+	LogsOlderThen(value int) ([]string, error)
+}
+
 type CrashTable interface {
 	Table
 	// Add the individual crash to the given crash group.
