@@ -36,6 +36,7 @@ func NewStupidBackend(keyTable db.Table, apps map[string]App) *Stupid {
 
 func (s *Stupid) cleanupLoop() {
 	for range time.Tick(24 * time.Hour) {
+		log.Println("Cleaning up old logs")
 		cleanTmp := time.Now().Add(-24 * 30 * time.Hour)
 		cleanVal := cleanTmp.Year()*10000 + int(cleanTmp.Month())*100 + cleanTmp.Day()
 		var ids []string
