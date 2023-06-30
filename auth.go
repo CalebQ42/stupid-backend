@@ -167,13 +167,13 @@ func (s *Stupid) createUser(r *Request) {
 		r.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	r.Resp.WriteHeader(http.StatusCreated)
 	_, err = r.Resp.Write(out)
 	if err != nil {
 		fmt.Printf("error while writing response: %s", err)
 		r.Resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	r.Resp.WriteHeader(http.StatusCreated)
 }
 
 func writeCreateUserProblemResp(problem string, w http.ResponseWriter) {
