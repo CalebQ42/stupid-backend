@@ -19,9 +19,9 @@ type Stupid struct {
 	Apps            map[string]App
 	createUserMutex *sync.Mutex
 	headerValues    map[string]string
+	cors            string
 	userPriv        ed25519.PrivateKey
 	userPub         ed25519.PublicKey
-	cors            string
 }
 
 // Creates a new *Stupid. If corsAddress is empty, CORS is not allowed.
