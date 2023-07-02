@@ -21,14 +21,16 @@ type Stupid struct {
 	headerValues    map[string]string
 	userPriv        ed25519.PrivateKey
 	userPub         ed25519.PublicKey
+	cors            bool
 }
 
 // Creates a new *Stupid.
-func NewStupidBackend(keyTable db.Table, apps map[string]App) *Stupid {
+func NewStupidBackend(keyTable db.Table, apps map[string]App, allowCors bool) *Stupid {
 	out := &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
 		Apps:            apps,
+		cors:            allowCors,
 	}
 	go out.cleanupLoop()
 	return out
@@ -83,7 +85,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set(k, v)
 		}
 	}
-	if r.Method == http.MethodOptions {
+	if s.cors && r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
