@@ -21,16 +21,16 @@ type Stupid struct {
 	headerValues    map[string]string
 	userPriv        ed25519.PrivateKey
 	userPub         ed25519.PublicKey
-	cors            bool
+	cors            string
 }
 
-// Creates a new *Stupid.
-func NewStupidBackend(keyTable db.Table, apps map[string]App, allowCors bool) *Stupid {
+// Creates a new *Stupid. If corsAddress is empty, CORS is not allowed.
+func NewStupidBackend(keyTable db.Table, apps map[string]App, corsAddress string) *Stupid {
 	out := &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
 		Apps:            apps,
-		cors:            allowCors,
+		cors:            corsAddress,
 	}
 	go out.cleanupLoop()
 	return out
@@ -85,11 +85,14 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set(k, v)
 		}
 	}
-	if s.cors && r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
-		return
+	if s.cors != "" {
+		w.Header().Set("Access-Control-Allow-Origin", s.cors)
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers")
+			return
+		}
 	}
 	if len(req.Path) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
