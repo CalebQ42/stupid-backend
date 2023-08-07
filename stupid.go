@@ -2,6 +2,7 @@ package stupid
 
 import (
 	"crypto/ed25519"
+	_ "embed"
 	"log"
 	"net/http"
 	"path"
@@ -11,6 +12,9 @@ import (
 
 	"github.com/CalebQ42/stupid-backend/pkg/db"
 )
+
+//go:embed embed/robots.txt
+var robotsTxt []byte
 
 // An instance of the stupid backend. Implements http.Handler
 type Stupid struct {
@@ -85,6 +89,10 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Path:   strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/"),
 		Method: r.Method,
 		Resp:   w,
+	}
+	if len(req.Path) == 1 && req.Path[0] == "robots.txt" {
+		w.Write(robotsTxt)
+		return
 	}
 	if s.headerValues != nil {
 		for k, v := range s.headerValues {
