@@ -37,25 +37,31 @@ func NewStupidBackend(keyTable db.Table, apps map[string]App, corsAddress string
 }
 
 func (s *Stupid) cleanupLoop() {
+	s.cleanup()
 	for range time.Tick(24 * time.Hour) {
-		log.Println("Cleaning up old logs")
-		cleanTmp := time.Now().Add(-24 * 30 * time.Hour)
-		cleanVal := cleanTmp.Year()*10000 + int(cleanTmp.Month())*100 + cleanTmp.Day()
-		var ids []string
-		var err error
-		for appName := range s.Apps {
-			ids, err = s.Apps[appName].Logs().LogsOlderThen(cleanVal)
+		s.cleanup()
+	}
+}
+
+func (s *Stupid) cleanup() {
+	log.Println("Cleaning up old logs")
+	cleanTmp := time.Now().Add(-30 * 24 * time.Hour) // 30 days prior
+	cleanVal := cleanTmp.Year()*10000 + int(cleanTmp.Month())*100 + cleanTmp.Day()
+	var ids []string
+	var err error
+	for appName := range s.Apps {
+		ids, err = s.Apps[appName].Logs().LogsOlderThen(cleanVal)
+		if err != nil {
+			log.Println("Error when cleaning up old logs for "+appName+":", err)
+			continue
+		}
+		for i := range ids {
+			err = s.Apps[appName].Logs().Delete(ids[i])
 			if err != nil {
-				log.Println("Error when cleaning up old logs for "+appName+":", err)
-				continue
-			}
-			for i := range ids {
-				err = s.Apps[appName].Logs().Delete(ids[i])
-				if err != nil {
-					log.Println("Error when deleting old logs for "+appName+":", err)
-				}
+				log.Println("Error when deleting old logs for "+appName+":", err)
 			}
 		}
+		log.Println("Cleaned up", len(ids), "logs for", appName)
 	}
 }
 

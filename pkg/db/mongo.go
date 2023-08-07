@@ -94,27 +94,22 @@ func (m MongoTable) Count(filter map[string]any) (int64, error) {
 }
 
 func (m MongoTable) LogsOlderThen(value int) ([]string, error) {
-	out := make([]string, 0)
 	res, err := m.c.Find(context.TODO(), bson.M{"lastCon": bson.M{"$lt": value}}, options.Find().SetProjection(bson.M{"_id": 1}))
 	if err == mongo.ErrNoDocuments {
-		return out, nil
+		return make([]string, 0), nil
 	} else if err != nil {
 		return nil, err
 	}
-	var tmp struct {
+	var tmp []struct {
 		ID string `bson:"_id"`
 	}
-	err = res.Decode(&tmp)
+	err = res.All(context.TODO(), &tmp)
 	if err != nil {
-		return out, err
+		return nil, err
 	}
-	out = append(out, tmp.ID)
-	for res.Next(context.TODO()) {
-		err = res.Decode(&tmp)
-		if err != nil {
-			return out, err
-		}
-		out = append(out, tmp.ID)
+	out := make([]string, len(tmp))
+	for i := range tmp {
+		out[i] = tmp[i].ID
 	}
 	return out, res.Err()
 }
