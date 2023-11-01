@@ -164,7 +164,8 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	default:
-		if !app.Extension(req) {
+		ext, ok := app.(ExtendedApp)
+		if !ok || !ext.Extension(req) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}

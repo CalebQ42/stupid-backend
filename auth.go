@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 	"github.com/google/uuid"
 	"github.com/pascaldekloe/jwt"
 	"golang.org/x/crypto/argon2"

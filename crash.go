@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/CalebQ42/stupid-backend/pkg/crash"
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/crash"
+	"github.com/CalebQ42/stupid-backend/db"
 )
 
 func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
@@ -22,15 +22,9 @@ func (s *Stupid) crashReport(req *Request, table db.CrashTable) {
 		req.Resp.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if s.Apps[req.ApiKey.AppID].IgnoreOldVersionCrashes() {
-		for _, v := range s.Apps[req.ApiKey.AppID].CurrentVersions() {
-			if c.Version == v {
-				goto addCrash
-			}
-		}
+	if f, ok := s.Apps[req.ApiKey.AppID].(CrashFilteredApp); ok && !f.AcceptCrash(c) {
 		return
 	}
-addCrash:
 	err = table.AddCrash(c)
 	if err != nil {
 		log.Printf("error while adding crash: %s", err)

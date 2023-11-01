@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 )
 
 func (s *Stupid) count(req *Request, tab db.Table) {
