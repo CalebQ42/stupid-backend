@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 )
 
 func (s *Stupid) logReq(req *Request, logs db.Table) {
@@ -33,7 +33,7 @@ func (s *Stupid) logReq(req *Request, logs db.Table) {
 	usr := logUser{
 		ID:       id[0],
 		Platform: plat[0],
-		LastCon:  (now.Year()*10000) + (int(now.Month()) * 100) + (now.Day()),
+		LastCon:  (now.Year() * 10000) + (int(now.Month()) * 100) + (now.Day()),
 	}
 	if ok {
 		err = logs.Update(id[0], usr)

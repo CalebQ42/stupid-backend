@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 )
 
 //go:embed embed/robots.txt
@@ -20,7 +20,7 @@ var robotsTxt []byte
 type Stupid struct {
 	keys            db.Table
 	users           db.UserTable
-	Apps            map[string]App
+	Apps            map[string]any
 	createUserMutex *sync.Mutex
 	headerValues    map[string]string
 	cors            string
@@ -29,7 +29,15 @@ type Stupid struct {
 }
 
 // Creates a new *Stupid. If corsAddress is empty, CORS is not allowed.
-func NewStupidBackend(keyTable db.Table, apps map[string]App, corsAddress string) *Stupid {
+func NewStupidBackend(keyTable db.Table, apps map[string]any, corsAddress string) *Stupid {
+	for _, a := range apps {
+		if _, ok := a.(KeyedApp); ok {
+			continue
+		} else if _, ok := a.(UnKeyedApp); ok {
+			continue
+		}
+		log.Fatalln("App", a, "does not implement KeyedApp or UnKeyedApp")
+	}
 	out := &Stupid{
 		keys:            keyTable,
 		createUserMutex: &sync.Mutex{},
@@ -53,14 +61,18 @@ func (s *Stupid) cleanup() {
 	cleanVal := cleanTmp.Year()*10000 + int(cleanTmp.Month())*100 + cleanTmp.Day()
 	var ids []string
 	var err error
-	for appName := range s.Apps {
-		ids, err = s.Apps[appName].Logs().LogsOlderThen(cleanVal)
+	for appName, a := range s.Apps {
+		app, ok := a.(KeyedApp)
+		if !ok {
+			continue
+		}
+		ids, err = app.Logs().LogsOlderThen(cleanVal)
 		if err != nil {
 			log.Println("Error when cleaning up old logs for "+appName+":", err)
 			continue
 		}
 		for i := range ids {
-			err = s.Apps[appName].Logs().Delete(ids[i])
+			err = app.Logs().Delete(ids[i])
 			if err != nil {
 				log.Println("Error when deleting old logs for "+appName+":", err)
 			}
@@ -113,6 +125,12 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !req.validKey(s.keys) {
+		_, ok := req.Query["key"]
+		if !ok {
+			if s.handlePossibleUnKeyedApp(req) {
+				return
+			}
+		}
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -121,8 +139,13 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	app := s.Apps[req.ApiKey.AppID]
-	if app == nil {
+	a := s.Apps[req.ApiKey.AppID]
+	if a == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	app, ok := a.(KeyedApp)
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -169,4 +192,23 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}
+}
+
+func (s *Stupid) handlePossibleUnKeyedApp(req *Request) bool {
+	app, ok := s.Apps[req.Path[0]].(UnKeyedApp)
+	if !ok {
+		for _, a := range s.Apps {
+			app, ok = a.(UnKeyedApp)
+			if ok && app.AlternateName() == req.Path[0] {
+				break
+			}
+		}
+		if !ok {
+			return false
+		}
+	}
+	if !app.HandleReqest(req) {
+		req.Resp.WriteHeader(http.StatusBadRequest)
+	}
+	return true
 }

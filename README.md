@@ -15,9 +15,9 @@ A purposely simple and "stupid" backend. Primarily created for [SWAssistant](htt
   - Each app will have a seperate App ID.
   - Users will be shared between multiple apps.
 
-## Base URLs
+## Base Authenticed URLs
 
-These are the available functions in the core setup. These are meant to be added to in a specific implementation.
+These are the available functions in the core setup for `KeyedApp`s. These are meant to be added to in a specific implementation.
 
 ### API Key Info
 
@@ -154,12 +154,23 @@ There are no requests provided by stupid-backend that requires authentication, b
 
 If a token is present, but the token is invalid (expired or otherwise), returns 401.
 
+## Unauthenticated Apps
+
+You can add an app as an `UnKeyedApp` that doesn't require an API key. This does not have an default functions, but requests will be forwarded to the app. When using both `KeyedApp` and `UnKeyedApp`, the `KeyedApp`s will have priority.
+
+### Requests
+
+> ANY: /{appID}/
+> ANY: /{alternateName}/
+
 ## TODO
 
 This libary is yet unfinished, and still needs a couple things.
 
 - Change passwords.
   - De-authorize JWT tokens when this is done.
+- Allow for third-party logins
+  - Primarily want Google 0Auth, but implemented in a way that others could be added later on.
 - Provide more pre-made db's
 - Proper tests
   - Could cause less headaches for me in the future.

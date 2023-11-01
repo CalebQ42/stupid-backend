@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/CalebQ42/stupid-backend"
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -32,18 +32,6 @@ func (a *App) Logs() db.LogTable {
 
 func (a *App) Crashes() db.CrashTable {
 	return db.NewMongoTable(a.DB.Collection("crashes"))
-}
-
-func (a *App) Extension(*stupid.Request) bool {
-	return false
-}
-
-func (a *App) IgnoreOldVersionCrashes() bool {
-	return false
-}
-
-func (a *App) CurrentVersions() []string {
-	return []string{}
 }
 
 // A simple implementation of stupid.App using mongodb.

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/pkg/db"
+	"github.com/CalebQ42/stupid-backend/db"
 )
 
 type Request struct {
