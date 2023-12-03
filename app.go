@@ -27,10 +27,14 @@ type ExtendedApp interface {
 }
 
 type UnKeyedApp interface {
-	// An alternate path name beside the app's name for requests.
-	AlternateName() string
 	// Handle a request that does not include an API key,
 	// but who's Request.Path[0] is this app's name or AlternateName().
 	// If false, status code 400 (bad request) is sent.
 	HandleReqest(*Request) bool
+}
+
+type UnKeyedWithAlternateNameApp interface {
+	UnKeyedApp
+	// An alternate path name beside the app's name for requests.
+	AlternateName() string
 }

@@ -197,9 +197,10 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Stupid) handlePossibleUnKeyedApp(req *Request) bool {
 	app, ok := s.Apps[req.Path[0]].(UnKeyedApp)
 	if !ok {
+		var altApp UnKeyedWithAlternateNameApp
 		for _, a := range s.Apps {
-			app, ok = a.(UnKeyedApp)
-			if ok && app.AlternateName() == req.Path[0] {
+			altApp, ok = a.(UnKeyedWithAlternateNameApp)
+			if ok && altApp.AlternateName() == req.Path[0] {
 				break
 			}
 		}
