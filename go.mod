@@ -1,4 +1,4 @@
-module github.com/CalebQ42/stupid-backend
+module github.com/CalebQ42/stupid-backend/v2
 
 go 1.21.4
 

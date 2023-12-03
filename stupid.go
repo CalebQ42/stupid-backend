@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/db"
+	"github.com/CalebQ42/stupid-backend/v2/db"
 )
 
 //go:embed embed/robots.txt

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/CalebQ42/stupid-backend"
-	"github.com/CalebQ42/stupid-backend/db"
+	"github.com/CalebQ42/stupid-backend/v2"
+	"github.com/CalebQ42/stupid-backend/v2/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

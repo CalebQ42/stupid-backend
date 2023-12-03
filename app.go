@@ -1,8 +1,8 @@
 package stupid
 
 import (
-	"github.com/CalebQ42/stupid-backend/crash"
-	"github.com/CalebQ42/stupid-backend/db"
+	"github.com/CalebQ42/stupid-backend/v2/crash"
+	"github.com/CalebQ42/stupid-backend/v2/db"
 )
 
 // A simple API Key restricted app.

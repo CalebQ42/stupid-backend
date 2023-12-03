@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CalebQ42/stupid-backend/db"
+	"github.com/CalebQ42/stupid-backend/v2/db"
 )
 
 func (s *Stupid) logReq(req *Request, logs db.Table) {

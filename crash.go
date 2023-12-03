@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/CalebQ42/stupid-backend/crash"
-	"github.com/CalebQ42/stupid-backend/db"
+	"github.com/CalebQ42/stupid-backend/v2/crash"
+	"github.com/CalebQ42/stupid-backend/v2/db"
 )
 
 func (s *Stupid) crashReport(req *Request, table db.CrashTable) {

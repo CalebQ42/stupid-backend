@@ -3,7 +3,7 @@ package db
 import (
 	"errors"
 
-	"github.com/CalebQ42/stupid-backend/crash"
+	"github.com/CalebQ42/stupid-backend/v2/crash"
 )
 
 var ErrNotFound error = errors.New("not found")
