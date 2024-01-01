@@ -135,7 +135,11 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !req.validKey(s.keys) {
 		_, ok := req.Query["key"]
 		if !ok {
-			if s.handlePossibleUnKeyedApp(req) {
+			var app UnKeyedApp
+			if app, ok = s.Apps[req.Path[0]].(UnKeyedApp); ok {
+				if !app.HandleReqest(req) {
+					w.WriteHeader(http.StatusBadRequest)
+				}
 				return
 			}
 		}
@@ -200,15 +204,4 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}
-}
-
-func (s *Stupid) handlePossibleUnKeyedApp(req *Request) bool {
-	app, ok := s.Apps[req.Path[0]].(UnKeyedApp)
-	if !ok {
-		return false
-	}
-	if !app.HandleReqest(req) {
-		req.Resp.WriteHeader(http.StatusBadRequest)
-	}
-	return true
 }
