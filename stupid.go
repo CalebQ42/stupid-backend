@@ -30,10 +30,18 @@ type Stupid struct {
 
 // Creates a new *Stupid. If corsAddress is empty, CORS is not allowed.
 func NewStupidBackend(keyTable db.Table, apps map[string]any, corsAddress string) *Stupid {
-	for _, a := range apps {
+	for appName, a := range apps {
 		if _, ok := a.(KeyedApp); ok {
 			continue
-		} else if _, ok := a.(UnKeyedApp); ok {
+		} else if ua, ok := a.(UnKeyedApp); ok {
+			if alt, ok := ua.(UnKeyedWithAlternateNameApp); ok {
+				_, exists := apps[alt.AlternateName()]
+				if exists {
+					log.Fatalln("Alternate name for", appName, "already exists")
+				} else {
+					apps[alt.AlternateName()] = ua
+				}
+			}
 			continue
 		}
 		log.Fatalln("App", a, "does not implement KeyedApp or UnKeyedApp")
@@ -197,16 +205,7 @@ func (s *Stupid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Stupid) handlePossibleUnKeyedApp(req *Request) bool {
 	app, ok := s.Apps[req.Path[0]].(UnKeyedApp)
 	if !ok {
-		var altApp UnKeyedWithAlternateNameApp
-		for _, a := range s.Apps {
-			altApp, ok = a.(UnKeyedWithAlternateNameApp)
-			if ok && altApp.AlternateName() == req.Path[0] {
-				break
-			}
-		}
-		if !ok {
-			return false
-		}
+		return false
 	}
 	if !app.HandleReqest(req) {
 		req.Resp.WriteHeader(http.StatusBadRequest)
