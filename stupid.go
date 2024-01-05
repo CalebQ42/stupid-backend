@@ -30,21 +30,29 @@ type Stupid struct {
 
 // Creates a new *Stupid. If corsAddress is empty, CORS is not allowed.
 func NewStupidBackend(keyTable db.Table, apps map[string]any, corsAddress string) *Stupid {
+	var ok bool
+	var ua UnKeyedApp
+	var alt UnKeyedWithAlternateNameApp
+	toAdd := make(map[string]UnKeyedApp)
 	for appName, a := range apps {
-		if _, ok := a.(KeyedApp); ok {
+		if _, ok = a.(KeyedApp); ok {
 			continue
-		} else if ua, ok := a.(UnKeyedApp); ok {
-			if alt, ok := ua.(UnKeyedWithAlternateNameApp); ok {
+		} else if ua, ok = a.(UnKeyedApp); ok {
+			if alt, ok = ua.(UnKeyedWithAlternateNameApp); ok {
 				_, exists := apps[alt.AlternateName()]
-				if exists {
-					log.Fatalln("Alternate name for", appName, "already exists")
+				_, toAddExists := toAdd[alt.AlternateName()]
+				if exists || toAddExists {
+					log.Fatalln("Alternate name for", appName, alt.AlternateName(), "already exists")
 				} else {
-					apps[alt.AlternateName()] = ua
+					toAdd[alt.AlternateName()] = ua
 				}
 			}
 			continue
 		}
 		log.Fatalln("App", a, "does not implement KeyedApp or UnKeyedApp")
+	}
+	for k, v := range toAdd {
+		apps[k] = v
 	}
 	out := &Stupid{
 		keys:            keyTable,
