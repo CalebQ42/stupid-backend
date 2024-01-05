@@ -119,6 +119,16 @@ func (s *Stupid) createUser(r *Request) {
 		writeCreateUserProblemResp("username", r.Resp)
 		return
 	}
+	emailNotAvailable, err := s.users.Contains(map[string]any{"email": email})
+	if err != nil {
+		fmt.Printf("error while finding if email is already taken: %s", err)
+		r.Resp.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if emailNotAvailable {
+		writeCreateUserProblemResp("email", r.Resp)
+		return
+	}
 	// TODO: check email properly
 	if !strings.Contains(email, "@") && !strings.Contains(email, ".") {
 		writeCreateUserProblemResp("email", r.Resp)
@@ -133,6 +143,7 @@ func (s *Stupid) createUser(r *Request) {
 		ID:       uuid.NewString(),
 		Username: name,
 		Email:    email,
+		Role:     "user",
 	}
 	newUser.Salt, err = generateSalt()
 	if err != nil {

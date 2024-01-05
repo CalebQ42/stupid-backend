@@ -18,6 +18,7 @@ type user struct {
 	Email       string `json:"email" bson:"email"`
 	Password    string `json:"password" bson:"password"`
 	Salt        string `json:"salt" bson:"salt"`
+	Role        string `json:"role" bson:"role"`
 	LastTimeout int64  `json:"lastTimeout" bson:"lastTimeout"`
 	Failed      int    `json:"failed" bson:"failed"`
 }

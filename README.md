@@ -97,10 +97,12 @@ Request Body:
 {
   // Must not be empty or just spaces and cannot end or begin with spaces.
   // Must be less then 64 characters.
+  // Must be unique.
   // Spaces will be trimmed.
   "username": "username",
   // Passwords must be between 5-32 characters.
   "password": "password",
+  // Email must be unique.
   "email": "email"
 }
 ```
@@ -112,7 +114,7 @@ Response:
   "token": "jwt token",
   // Only populated if there's some problem with creating the user.
   // username - Username is already taken or invalid.
-  // email - email is (probably) invalid.
+  // email - email is already taken or (probably) invalid.
   // password - Password is invalid.
   "problem": "username"
 }
