@@ -82,6 +82,7 @@ func (s *Stupid) decodeJWT(token string) (*AuthdUser, error) {
 		ID:       usr.ID,
 		Username: usr.Username,
 		Email:    usr.Email,
+		Role:     usr.Role,
 	}, nil
 }
 

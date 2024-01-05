@@ -10,6 +10,7 @@ type AuthdUser struct {
 	ID       string `json:"id" bson:"_id"`
 	Username string `json:"username" bson:"username"`
 	Email    string `json:"email" bson:"email"`
+	Role     string `json:"role" bson:"role"`
 }
 
 type user struct {
