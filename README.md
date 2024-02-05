@@ -80,6 +80,8 @@ Request body:
   "platform": "platform",
   "stack": "stacktrace",
   "version": "app version",
+  // Optional extras object field with additional context
+  "extras": {}
 }
 ```
 
