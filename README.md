@@ -1,3 +1,5 @@
+Depreciated! Now [here](https://github.com/CalebQ42/darkstorm-server/tree/main/internal/backend)
+
 # Stupid Backend
 
 A purposely simple and "stupid" backend. Primarily created for [SWAssistant](https://github.com/CalebQ42/SWAssistant) with that specific implementation found at [swassistant-backend](https://github.com/CalebQ42/swassistant-backend). Though made for SWAssistant, this is a barebones that provides some common use cases I (and potentially others) that can be quickly and easily deployed.
